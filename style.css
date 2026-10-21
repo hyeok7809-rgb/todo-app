@@ -576,6 +576,7 @@ canvas.sprite {
 #routine-screen,
 #study-screen,
 #assets-screen,
+#report-screen,
 #ceo-screen {
   max-width: 680px;
 }
@@ -1213,4 +1214,92 @@ canvas.sprite {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* ---------- 기획부: 주간 목표 · 회고 · 8주 그래프 ---------- */
+.goal-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+}
+
+/* 목표 한 줄. 인사부의 .routine-item과 같은 생김새, 완료되면 초록 배경 + 취소선 */
+.goal-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.goal-item.done {
+  background: var(--c-done);
+}
+
+.goal-item.done .routine-check {
+  background: #22c55e;
+  color: #fff;
+}
+
+.goal-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.goal-item.done .goal-text {
+  text-decoration: line-through;
+  color: #667;
+}
+
+/* 회고 폼: 라벨 아래에 여러 줄 입력칸(textarea) */
+.review-form label {
+  display: block;
+  font-size: 13px;
+  color: #556;
+  margin-bottom: 10px;
+}
+
+.review-form textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box; /* 테두리·안쪽 여백을 포함해서 100%가 되게 (안 그러면 카드 밖으로 삐져나간다) */
+  margin-top: 4px;
+  font-family: inherit;
+  font-size: 15px;
+  padding: 8px;
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  resize: vertical;
+}
+
+/* 8주 경험치 막대그래프. 라이브러리 없이 div 높이(%)로 그린다 */
+.week-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 140px;
+}
+
+.week-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  font-size: 11px;
+  color: #556;
+}
+
+.week-bar .bar {
+  width: 100%;
+  background: var(--accent);
+  border: 2px solid var(--ink);
+  min-height: 2px; /* 0 EXP인 주도 바닥선은 보이게 */
+}
+
+.week-bar.this-week .bar {
+  background: #22c55e;
 }

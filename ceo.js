@@ -8,7 +8,7 @@
 
 // ---------- 1. 데이터 ----------
 // 백업에 넣을 localStorage 키 목록. 새 부서를 열어 키가 늘면 여기에 추가한다.
-const BACKUP_KEYS = ["ledger-entries", "routine-checks", "study-progress", "asset-accounts"];
+const BACKUP_KEYS = ["ledger-entries", "routine-checks", "study-progress", "asset-accounts", "weekly-plans"];
 
 // ---------- 2. 기능 함수 ----------
 // 세 저장소를 한 객체로 묶는다. 모양: { version: 1, savedAt: "...", data: { "ledger-entries": [...], ... } }

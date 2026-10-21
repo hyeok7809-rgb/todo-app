@@ -27,7 +27,7 @@ const STORAGE_KEY = "ledger-entries";
 const ROOMS = [
   { id: "ledger",  icon: "📒", name: "재무부",    floor: 1, open: true,  pattern: "check",   color: "#dcefff", shelf: ["WINDOW", "WHITEBOARD", "CLOCK"],              props: ["PLANT", "COPIER"],  desc: "가계부 · 잔액" },
   { id: "assets",  icon: "💰", name: "자산관리부", floor: 1, open: true,  pattern: "dots",    color: "#ffe6c4", shelf: ["WINDOW", "BOOKSHELF", "CLOCK"],               props: ["CABINET", "PLANT"], desc: "계좌별 잔고 · 순자산", weekly: true },
-  { id: "report",  icon: "📊", name: "기획부",    floor: 1, open: false, pattern: "stripes", color: "#dff5dc", shelf: ["WHITEBOARD", "WINDOW", "CLOCK"],              props: ["COPIER", "COOLER"], desc: "4단계에서 열림" },
+  { id: "report",  icon: "📊", name: "기획부",    floor: 1, open: true,  pattern: "stripes", color: "#dff5dc", shelf: ["WHITEBOARD", "WINDOW", "CLOCK"],              props: ["COPIER", "COOLER"], desc: "주간 목표 · 회고 · 리포트", weekly: true },
   { id: "routine", icon: "📋", name: "인사부",    floor: 1, open: true,  pattern: "check",   color: "#ffdede", shelf: ["WINDOW", "BOOKSHELF", "WHITEBOARD"],          props: ["SOFA", "PLANT"],    desc: "데일리 루틴 · 연속 달성일" },
   { id: "study",   icon: "📚", name: "교육부",    floor: 2, open: true,  pattern: "dots",    color: "#e9e0ff", shelf: ["BOOKSHELF", "WHITEBOARD", "WINDOW"],          props: ["PLANT", "CABINET"], desc: "코딩·AI 커리큘럼 진도" },
   { id: "ai",      icon: "🤖", name: "AI 직원실", floor: 2, open: false, pattern: "grid",    color: "#d8f5f0", shelf: ["WINDOW", "CLOCK", "WHITEBOARD"],              props: ["COOLER", "COPIER"], desc: "8단계에서 열림" },
@@ -169,13 +169,14 @@ function formatMoney(number) {
 }
 
 // ---------- 4-1. 경험치와 레벨 ----------
-// 경험치는 세 부서에서 온다. 가계부 기록 1건 = 10, 루틴 체크 1개 = 10, 단원 완료 = 그 단원의 경험치(40~100).
+// 경험치는 부서마다 온다. 가계부 기록 1건 = 10, 루틴 체크 1개 = 10, 단원 완료 = 그 단원의 경험치(40~100),
+// 잔고 기록 1회 = 10, 주간 목표 완료 = 10, 주간 회고 = 30.
 // 100 경험치마다 레벨이 하나 오른다.
 const XP_PER_ENTRY = 10;
 const XP_PER_LEVEL = 100;
 
 function totalXp() {
-  return entries.length * XP_PER_ENTRY + routineXp() + studyXp() + assetXp(); // 각 부서 파일의 함수
+  return entries.length * XP_PER_ENTRY + routineXp() + studyXp() + assetXp() + reportXp(); // 각 부서 파일의 함수
 }
 
 function renderLevel() {
@@ -220,7 +221,7 @@ function todayEntries() {
   });
 }
 
-// 사장실을 뺀, 열려 있는 "매일 할 일" 부서 목록. weekly 부서(자산관리부)는 오늘 요약에서 뺀다
+// 사장실을 뺀, 열려 있는 "매일 할 일" 부서 목록. weekly 부서(자산관리부·기획부)는 오늘 요약에서 뺀다
 function openRooms() {
   return ROOMS.filter(function (room) { return room.open && !room.ceo && !room.weekly; });
 }
@@ -231,6 +232,7 @@ function roomDoneToday(roomId) {
   if (roomId === "routine") return routineDoneToday(); // routine.js
   if (roomId === "study") return studyDoneToday();     // study.js
   if (roomId === "assets") return assetsUpdatedRecently(); // assets.js: 매일이 아니라 주 1회 점검
+  if (roomId === "report") return reportDoneThisWeek();    // report.js: 이번 주 목표가 있으면 완료, 일요일엔 회고까지
   if (roomId === "ceo") return openRooms().every(function (room) { return roomDoneToday(room.id); }); // 열린 부서 전부 완료
   return false;
 }
@@ -309,6 +311,7 @@ function render() {
   renderRoutine(); // routine.js
   renderStudy();   // study.js
   renderAssets();  // assets.js
+  renderReport();  // report.js
   renderCeo();     // ceo.js
   renderStatus();  // 상태는 부서 결과를 보고 정하니 맨 마지막에
 }
@@ -678,6 +681,7 @@ load();        // 재무부 내역
 routineLoad(); // 인사부 체크 (routine.js)
 studyLoad();   // 교육부 진도 (study.js)
 assetLoad();   // 자산관리부 계좌·잔고 (assets.js)
+reportLoad();  // 기획부 목표·회고 (report.js)
 render();
 
 // 시간이 지나면 상태(근무 중 → 문제 등)가 바뀌니 1분마다 다시 계산한다

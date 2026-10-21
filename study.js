@@ -9,6 +9,13 @@
 // ---------- 1. 데이터 ----------
 const STUDY_START = "2026-12-01"; // 개강일. 일정표(docs/SCHEDULE.md)와 같은 기준
 
+// 단원 문서를 여는 주소의 앞부분. GitHub에서 열면 마크다운이 보기 좋게 바뀌고 퀴즈 정답(접기)도 동작한다.
+// 인터넷 없이 내 컴퓨터의 파일을 바로 열고 싶으면 빈 문자열("")로 바꾼다(그러면 원문 그대로 보인다).
+const DOC_BASE = "https://github.com/hyeok7809-rgb/todo-app/blob/main/";
+function docUrl(unit) {
+  return DOC_BASE + unit.doc; // "docs/curriculum/00-setup/00-1.md" 앞에 주소를 붙인다
+}
+
 // 끝낸 단원. 모양: { "00-1": "2026-12-01", "00-2": "2026-12-02" }  (단원 id → 끝낸 날짜)
 let studyDone = {};
 const STUDY_KEY = "study-progress";
@@ -132,7 +139,7 @@ function buildUnitRow(unit, plan) {
   text.appendChild(meta);
 
   const link = makeElement("a", "unit-link", "문서");
-  link.href = unit.doc;
+  link.href = docUrl(unit);
   link.target = "_blank";
 
   row.appendChild(check);
@@ -170,7 +177,7 @@ function renderStudy() {
     nextUnitBox.appendChild(makeElement("p", "card-title", next.id.replace(/^0/, "") + ". " + next.title));
     const actions = makeElement("div", "card-actions");
     const open = makeElement("a", "btn", "문서 열기");
-    open.href = next.doc;
+    open.href = docUrl(next);
     open.target = "_blank";
     const finish = makeElement("button", "btn btn-primary", "완료 (+" + next.xp + " EXP)");
     finish.addEventListener("click", function () { toggleUnit(next); });
