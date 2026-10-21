@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>나의 가계부</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <h1>나의 가계부</h1>
+
+    <!-- 현재 잔액: app.js가 계산해서 숫자를 채워 넣는다 -->
+    <section class="balance">
+      <p class="balance-label">현재 잔액</p>
+      <p class="balance-amount" id="balance">0원</p>
+    </section>
+
+    <!-- 입력 폼: 수입 또는 지출 한 건을 추가한다 -->
+    <form id="entry-form" class="entry-form">
+      <select id="entry-type">
+        <option value="expense">지출</option>
+        <option value="income">수입</option>
+      </select>
+      <input type="text" id="entry-title" placeholder="내용 (예: 점심, 월급)" required>
+      <input type="number" id="entry-amount" placeholder="금액" min="1" required>
+      <button type="submit">추가</button>
+    </form>
+
+    <!-- 내역 목록: app.js가 <li>를 만들어서 여기에 넣는다 -->
+    <ul id="entry-list" class="entry-list"></ul>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
