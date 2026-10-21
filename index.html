@@ -10,70 +10,62 @@
 
   <!-- ===== 화면 1: 회사 지도 ===== -->
   <section id="map-screen" class="screen">
-    <header class="sign">
-      <h1>나의 1인 회사</h1>
-      <p>방을 눌러서 들어가세요</p>
-      <!-- 회사 레벨과 경험치. 기록을 남길 때마다 경험치가 쌓인다 -->
-      <div class="level-row">
-        <span class="level-badge">Lv.<span id="level">1</span></span>
-        <div class="xp-bar"><div class="xp-fill" id="xp-fill"></div></div>
-        <span class="xp-text" id="xp-text">0 / 100</span>
-      </div>
+
+    <!-- 맨 위 상태 바. 왼쪽부터: 상태 요약 | 날짜(요일) | 레벨·경험치 | 오늘 기록 | 안내 문구
+         글자 내용은 app.js의 renderStatus()가 채운다. 채우기 전에는 "----------" 만 보인다. -->
+    <header class="status-bar">
+      <span class="status-item status-summary" id="status-summary">----------</span>
+      <span class="status-item" id="today-date">----------</span>
+      <span class="status-item status-level">
+        <span class="level-badge">Lv.<span id="level">-</span></span>
+        <span class="xp-bar"><span class="xp-fill" id="xp-fill"></span></span>
+        <span class="xp-text" id="xp-text">- / 100</span>
+      </span>
+      <span class="status-item"><span id="today-count">----------</span><span class="last-record" id="last-record"></span></span>
+      <span class="status-item status-hint">방을 눌러서 들어가세요</span>
     </header>
 
+    <!-- 건물: 1층(위, #floor-1) · 길 · 2층(아래, #floor-2).
+         방(부서)은 app.js의 ROOMS 목록을 보고 buildMap()이 자동으로 만들어 넣는다.
+         실제 건물처럼 1층을 아래로 두려면 여기서 두 floor의 순서만 바꾸면 된다.
+
+         buildMap()이 만드는 방 하나의 구조는 이렇다 (HTML만 열어 봐도 알 수 있게 적어 둔다):
+           <div class="room open" data-room="ledger" role="button" tabindex="0" style="--floor: #dcefff">
+             <span class="room-tag">📒 재무부 · 1명 · [상태 칩]</span>   이름표 (위쪽 테두리에 걸침)
+             <div class="room-shelf">창문 · 칠판 · 시계 <div class="room-door">문</div></div>   위쪽 벽 띠
+             <div class="room-inside pattern-check">팀장 자리 → 직원 책상 3×2</div>          바닥
+             <div class="room-props">화분 · 복사기</div>                                     아래쪽 널빤지 바닥 띠
+           </div>
+         사장실은 .room-inside 안에 책상 격자 대신 .rug(카펫)가 들어간다. -->
     <div class="building">
-      <!-- 각 방(부서). data-room 값은 app.js에서 어떤 화면을 열지 정할 때 쓴다 -->
-      <button class="room open" data-room="ledger">
-        <span class="room-label">재무부</span>
-        <span class="room-icon">💰</span>
-        <span class="room-desc">가계부 · 잔액</span>
-      </button>
-
-      <button class="room locked" data-room="assets">
-        <span class="room-label">자산관리부</span>
-        <span class="room-icon">🏦</span>
-        <span class="room-desc">3단계에서 열림</span>
-      </button>
-
-      <button class="room locked" data-room="routine">
-        <span class="room-label">인사부</span>
-        <span class="room-icon">📋</span>
-        <span class="room-desc">루틴 · 5단계</span>
-      </button>
-
-      <button class="room locked" data-room="study">
-        <span class="room-label">교육부</span>
-        <span class="room-icon">📚</span>
-        <span class="room-desc">코딩 학습 기록</span>
-      </button>
-
-      <button class="room locked" data-room="report">
-        <span class="room-label">기획부</span>
-        <span class="room-icon">📊</span>
-        <span class="room-desc">월별 리포트 · 4단계</span>
-      </button>
-
-      <button class="room locked" data-room="ai">
-        <span class="room-label">AI 직원실</span>
-        <span class="room-icon">🤖</span>
-        <span class="room-desc">최종 목표</span>
-      </button>
+      <div class="floor" id="floor-1"></div>
+      <div class="road" id="road"></div>
+      <div class="floor" id="floor-2"></div>
     </div>
 
-    <!-- 복도를 걸어다니는 나(사장) -->
-    <div class="hall">
-      <div class="player"></div>
-    </div>
+    <!-- 맨 아래 범례: 상태 표시가 무슨 뜻인지. 칩 색은 data-status 값으로 정해진다 -->
+    <footer class="legend">
+      <span class="legend-item"><span class="chip" data-status="problem">⚠ 문제</span>22시가 지났는데 오늘 기록이 없음</span>
+      <span class="legend-item"><span class="chip" data-status="working">💬 근무 중</span>일하는 시간(9~21시), 기록을 기다리는 중</span>
+      <span class="legend-item"><span class="chip" data-status="done">✅ 완료</span>오늘 기록을 남김</span>
+      <span class="legend-item"><span class="chip" data-status="rest">💤 쉬는 중</span>출근 전(9시 이전) 또는 아직 안 열린 부서</span>
+    </footer>
   </section>
 
   <!-- ===== 화면 2: 재무부 (가계부) ===== -->
   <section id="ledger-screen" class="screen hidden">
     <header class="window-title">
       <button class="back-btn" data-back>◀ 지도</button>
-      <span>재무부 · 가계부</span>
+      <span class="window-name">📒 재무부 · 가계부</span>
+      <!-- 팀장(나)의 오늘 상태. data-lead-status 가 붙어 있어서 renderStatus()가 채운다 -->
+      <span class="pill" id="ledger-status"><b>팀장</b><span class="pill-status" data-lead-status data-status="rest">----</span></span>
     </header>
 
-    <div class="window-body">
+    <div class="window-body pattern-check">
+      <!-- 방 느낌을 내는 장식(벽 띠·팀장 자리). app.js의 buildLedgerDeco()가 그림을 넣는다 -->
+      <div class="room-shelf ledger-shelf" id="ledger-shelf"></div>
+      <div class="ledger-desk" id="ledger-desk"></div>
+
       <div class="balance">
         <p class="balance-label">현재 잔액</p>
         <p class="balance-amount" id="balance">0원</p>
@@ -93,6 +85,8 @@
     </div>
   </section>
 
+  <!-- sprites.js(그림)를 먼저 읽고, 그 다음 app.js(동작)를 읽는다 -->
+  <script src="sprites.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

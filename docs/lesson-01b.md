@@ -37,6 +37,8 @@ const xpInLevel = xp % 100;              // 100으로 나눈 나머지 → 이�
 - **캐릭터 걷기**: `@keyframes walk`에 시작 위치와 끝 위치를 적고, `animation: walk 6s infinite alternate` 로 6초마다 왕복시킨다.
 - **+10 EXP 팝업**: `@keyframes pop-up`으로 1초 동안 위로 떠오르며 투명해진다. 자바스크립트는 요소를 만들어 붙이고 1초 뒤 지우기만 한다.
 
+> **1.6단계에서 바뀐 것**: 아래의 box-shadow 캐릭터와 `.hall` 복도는 `sprites.js` 글자 격자 방식으로 교체됐다. 숙제 1은 lesson-01c의 숙제 1로 대신한다. (설명은 [lesson-01c.md](lesson-01c.md))
+
 ### 캐릭터는 그림 파일이 아니다
 
 `.player`의 `box-shadow`에 점을 하나씩 찍어서 그렸다. `8px 0 #3a2a1a` 는 "오른쪽 8px, 아래 0px 위치에 갈색 점". 4px 단위로 격자를 채운 것이다.

@@ -1,6 +1,15 @@
 /* =====================================================
-   픽셀 게임 스타일 테마
+   픽셀 오피스 스타일 테마 (1.6단계)
    핵심 3가지: 픽셀 폰트, 두꺼운 검은 테두리, 각진 그림자
+   그림(캐릭터·가구)은 sprites.js가 <canvas>로 그리고,
+   벽지·바닥 무늬·길·걷기 모션은 여기 CSS가 맡는다.
+
+   방 하나의 구조 (index.html의 주석과 같다)
+     .room
+       ├ .room-tag    이름표 (아이콘 · 부서명 · 인원 · 상태 칩)
+       ├ .room-shelf  위쪽 벽 띠 (창문·칠판·시계 + 오른쪽 끝에 문)
+       ├ .room-inside 바닥 (팀장 자리 → 직원 책상 3×2)
+       └ .room-props  아래쪽 나무 널빤지 바닥 띠 + 소품
    ===================================================== */
 
 /* 한글 픽셀 폰트 (둥근모꼴). 인터넷이 안 되면 기본 폰트로 대체된다. */
@@ -10,15 +19,29 @@
   font-display: swap;
 }
 
+/* 자주 쓰는 색은 이름을 붙여서 맨 위에 모아둔다 */
 :root {
-  --sky: #5ad0d8;
-  --wall: #f6e7c8;
-  --floor: #c9a06a;
-  --ink: #1a1a1a;
+  --ink: #1a1a1a;        /* 윤곽선 검정 */
+  --bg: #1d2230;         /* 바깥 배경 (어두운 남색) */
+  --bar: #14171f;        /* 상태 바·범례 바 */
+  --frame: #2f5d3a;      /* 건물 틀 (진초록) */
+  --wall: #f4ebd3;       /* 방 위쪽 벽 띠 (크림색) */
+  --wall-dark: #cdb98f;  /* 벽 띠 아래의 걸레받이 */
+  --plank: #c9a06a;      /* 바닥 널빤지 */
+  --plank-dark: #a97f4e; /* 널빤지 사이 홈 */
+  --grass: #5bb04f;
+  --road: #8e8e96;
   --accent: #e84545;
   --blue: #2b6ce6;
   --red: #d63b3b;
+  --yellow: #ffd84a;
   --shadow: 4px 4px 0 var(--ink);
+
+  /* 상태 4가지의 배경색. 어떤 요소든 data-status="done" 이 붙으면 이 색이 된다 */
+  --c-done: #c9f3cf;
+  --c-working: #e3dcff;
+  --c-problem: #ffd48a;
+  --c-rest: #e4e6ec;
 }
 
 * {
@@ -28,69 +51,138 @@
 body {
   margin: 0;
   font-family: "DungGeunMo", "Malgun Gothic", sans-serif;
-  background: var(--sky);
+  background: var(--bg);
   color: var(--ink);
   /* 픽셀 느낌을 위해 글자를 부드럽게 뭉개지 않는다 */
   -webkit-font-smoothing: none;
+}
+
+/* 캔버스 그림은 확대해도 번지지 않고 각지게 */
+canvas.sprite {
   image-rendering: pixelated;
+  display: block;
+  flex-shrink: 0;
 }
 
 .screen {
-  max-width: 560px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 24px 16px 48px;
+  padding: 10px 10px 12px;
 }
 
 .hidden {
   display: none;
 }
 
-/* ---------- 간판 ---------- */
-.sign {
-  text-align: center;
-  background: #f5b63a;
+/* ---------- 상태 색 (공통) ----------
+   app.js가 element.dataset.status = "done" 처럼 값을 넣으면
+   아래 네 줄 중 하나가 골라진다. 색을 바꾸려면 맨 위 :root 의 --c-* 만 고치면 된다.
+
+   주의: 아래 .chip 이나 .pill 에 background 를 또 적으면 안 된다.
+   [data-status="done"] 과 .chip 은 CSS가 보기에 "힘(명시도)"이 같아서,
+   같은 힘이면 파일에서 더 뒤에 쓴 규칙이 이긴다. .chip 이 뒤에 있으니
+   .chip { background: ... } 를 적는 순간 상태 색 네 줄이 전부 무시된다.
+   (범례 칩은 HTML에, 이름표 칩은 app.js에 data-status 가 항상 붙어 있어서 기본 배경이 필요 없다) */
+[data-status="done"]    { background: var(--c-done); }
+[data-status="working"] { background: var(--c-working); }
+[data-status="problem"] { background: var(--c-problem); }
+[data-status="rest"]    { background: var(--c-rest); }
+
+/* 칩: 이름표·범례에 붙는 작은 네모. 배경색은 위의 data-status 네 줄이 정한다 (여기서 정하지 않는다) */
+.chip {
+  display: inline-block;
+  border: 2px solid var(--ink);
+  padding: 0 5px;
+  font-size: 11px;
+  line-height: 15px;
+  color: var(--ink); /* 어두운 바 위에 놓여도 글자는 항상 검정 */
+  white-space: nowrap;
+}
+
+/* 알약: "팀장 | ✅ 완료" 처럼 두 칸짜리 */
+.pill {
+  display: inline-flex;
+  align-items: stretch;
+  border: 2px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.pill b {
+  background: var(--ink);
+  color: var(--yellow);
+  padding: 0 6px;
+}
+
+.pill-status {
+  padding: 0 6px;
+}
+
+/* ---------- 상단 상태 바 ----------
+   왼쪽부터: 상태 요약 | 날짜(요일) | 레벨·경험치 | 오늘 기록 | (맨 오른쪽) 안내 문구 */
+.status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  background: var(--bar);
+  color: #e8e8ee;
   border: 4px solid var(--ink);
   box-shadow: var(--shadow);
-  padding: 12px;
-  margin-bottom: 20px;
+  padding: 7px 14px;
+  font-size: 13px;
+  margin-bottom: 12px;
 }
 
-.sign h1 {
-  margin: 0;
-  font-size: 28px;
-  color: var(--accent);
-  text-shadow: 2px 2px 0 #fff;
-}
-
-.sign p {
-  margin: 4px 0 0;
-  font-size: 14px;
-}
-
-/* ---------- 레벨과 경험치 바 ---------- */
-.level-row {
-  display: flex;
+.status-item {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 6px;
+  white-space: nowrap;
 }
+
+/* 항목 사이의 세로 구분선: 두 번째 항목부터 앞에 2px짜리 막대를 그린다 */
+.status-item + .status-item::before {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  background: #4a4e5e;
+  margin-right: 8px;
+}
+
+.status-summary {
+  font-weight: bold;
+}
+
+/* 상태 요약 글자는 어두운 바 위에 있으니 배경색 대신 글자색을 바꾼다 */
+.status-summary[data-status] { background: none; }
+.status-summary[data-status="done"]    { color: #7ee787; }
+.status-summary[data-status="working"] { color: #c4b5fd; }
+.status-summary[data-status="problem"] { color: #ffb14a; }
+.status-summary[data-status="rest"]    { color: #c0c4cf; }
 
 .level-badge {
-  background: var(--ink);
-  color: #ffd84a;
-  padding: 2px 8px;
-  font-size: 14px;
+  background: var(--yellow);
+  color: var(--ink);
+  padding: 1px 8px;
 }
 
 .xp-bar {
-  flex: 1;
-  height: 16px;
+  display: inline-block;
+  width: 120px;
+  height: 14px;
   background: #fff;
   border: 3px solid var(--ink);
   overflow: hidden;
+  vertical-align: middle;
 }
 
 .xp-fill {
+  display: block;
   height: 100%;
   width: 0%;
   background: repeating-linear-gradient(
@@ -104,18 +196,24 @@ body {
   font-size: 12px;
 }
 
+.status-hint {
+  margin-left: auto; /* 남는 공간을 왼쪽에 몰아서 맨 오른쪽으로 보낸다 */
+  color: var(--yellow);
+}
+
 /* 기록을 남기면 "+10 EXP"가 떠오르며 사라진다 */
 .xp-pop {
   position: fixed;
   left: 50%;
   top: 40%;
   transform: translateX(-50%);
-  background: #ffd84a;
+  background: var(--yellow);
   border: 3px solid var(--ink);
   padding: 6px 12px;
   font-size: 18px;
   pointer-events: none;
   animation: pop-up 1s ease-out forwards;
+  z-index: 10;
 }
 
 @keyframes pop-up {
@@ -123,124 +221,375 @@ body {
   100% { opacity: 0; margin-top: -60px; }
 }
 
-/* ---------- 건물과 방 ---------- */
+/* ---------- 건물 ---------- */
 .building {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  background: var(--floor);
+  background: var(--frame);
   border: 4px solid var(--ink);
   box-shadow: var(--shadow);
-  padding: 12px;
+  padding: 18px 10px 10px; /* 위쪽을 넉넉히: 방 이름표가 테두리 위로 올라온다 */
 }
 
+/* 한 층 = 가로 4칸 격자. 사장실은 2칸을 차지한다 */
+.floor {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.room-ceo {
+  grid-column: span 2;
+}
+
+/* ---------- 방 ---------- */
 .room {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--wall);
+  border: 4px solid var(--ink);
+  cursor: pointer;
+  min-width: 0;
+}
+
+.room:hover,
+.room:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: -1px;
+}
+
+/* 이름표: 방 위쪽 테두리에 걸쳐 놓는다 */
+.room-tag {
+  position: absolute;
+  top: -16px;
+  left: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 16px);
+  background: #fff;
+  border: 3px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  padding: 2px 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.tag-count {
+  color: #666;
+  font-size: 12px;
+}
+
+.lock-badge {
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* 위쪽 벽 띠: 크림색 벽에 창문·칠판·시계를 걸고, 오른쪽 끝에 문을 둔다.
+   아래 6px는 진한 걸레받이, 그 밑의 검은 선이 바닥과의 경계다. */
+.room-shelf {
+  position: relative;
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 42px;
+  padding: 2px 46px 6px 8px; /* 오른쪽 46px는 문 자리 */
+  background-color: var(--wall);
+  background-image:
+    linear-gradient(to top, var(--wall-dark) 0 6px, transparent 6px),      /* 걸레받이 */
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.08) 0 3px, transparent 3px); /* 천장 쪽 그늘 */
+  border-bottom: 3px solid var(--ink);
+}
+
+/* 문: 벽 띠의 오른쪽 끝, 걸레받이 선에 딱 붙인다 */
+.room-door {
+  position: absolute;
+  right: 10px;
+  bottom: 0;
+  line-height: 0;
+}
+
+/* 잠긴 방의 문에 붙는 자물쇠 */
+.door-lock {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* 바닥: 방마다 다른 파스텔 색 + 무늬. 색은 app.js가 --floor 변수로 넣는다 */
+.room-inside {
+  position: relative;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  background: var(--wall);
-  border: 4px solid var(--ink);
-  padding: 12px 8px 14px;
-  font-family: inherit;
-  color: var(--ink);
-  cursor: pointer;
+  padding: 6px 8px 6px;
+  background-color: var(--floor);
+}
+
+/* 바닥 무늬: 그림 파일 없이 CSS 그라데이션으로 만든다 */
+.pattern-check {
+  background-image:
+    linear-gradient(45deg, rgba(0, 0, 0, 0.06) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.06) 75%),
+    linear-gradient(45deg, rgba(0, 0, 0, 0.06) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.06) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+}
+
+.pattern-dots {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.14) 1.5px, transparent 1.6px);
+  background-size: 10px 10px;
+}
+
+.pattern-stripes {
+  background-image: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.06) 0 6px, transparent 6px 14px);
+}
+
+.pattern-grid {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+/* ----- 자리 하나 = 의자(뒤) → 캐릭터 → 책상(앞) 순서로 겹친다 -----
+   나중에 붙인 것이 위에 보인다. 책상이 캐릭터의 하체를 덮어서 앉은 것처럼 보인다.
+   좌표는 sprites.js의 칸 수 × 3px 로 계산했다. (책상 윗면 = 위에서 9칸 = 27px)
+   의자는 12px에서 시작해서 27px까지 15px만 보인다 = 어깨 양옆으로 삐져나온 등받이. */
+.seat {
   position: relative;
-  /* 방 아래쪽에 바닥 띠 */
-  background-image: linear-gradient(to top, var(--floor) 0 14px, transparent 14px);
+  width: 60px;
+  height: 45px;
 }
 
-.room:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 2px 2px 0 var(--ink);
+.seat canvas {
+  position: absolute;
 }
 
-.room-label {
-  background: #fff;
-  border: 3px solid var(--ink);
-  padding: 2px 8px;
-  font-size: 14px;
-  font-weight: bold;
+.seat .sprite-chair { left: 21px; top: 12px; }
+.seat .sprite-staff { left: 24px; top: 0; }
+.seat .sprite-desk  { left: 0;    top: 9px; }
+
+/* 팀장 자리는 책상이 조금 더 넓다 (머그컵 자리) */
+.seat-boss {
+  width: 72px;
 }
 
-.room-icon {
-  font-size: 36px;
-  line-height: 1;
+.seat-boss .sprite-chair     { left: 24px; top: 12px; }
+.seat-boss .sprite-boss      { left: 27px; top: 0; }
+.seat-boss .sprite-boss_desk { left: 0;    top: 9px; }
+
+/* 잠긴 방: 빈 의자 위에 떠 있는 "채용 예정" 팻말 (책상·모니터·의자를 가리지 않는다) */
+.hire-note {
+  position: absolute;
+  left: 44px;
+  top: -5px;
+  transform: translateX(-50%);
+  background: #fff3a0;
+  border: 2px solid var(--ink);
+  font-size: 10px;
+  line-height: 13px;
+  padding: 0 4px;
+  white-space: nowrap;
 }
 
-.room-desc {
-  font-size: 12px;
+.boss-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
-/* 잠긴 방은 회색으로, 자물쇠 표시 */
+/* 직원 책상 격자: 3칸 × 2줄. 아직 직원이 없어서 빈 의자만 있다 */
+.desk-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 60px);
+  gap: 2px 10px;
+}
+
+/* ----- 사장실: 크림색 바닥 위에 테두리가 있는 초록 카펫 ----- */
+.rug {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 6px 10px;
+  background-color: #3aa368;
+  background-image: repeating-linear-gradient(45deg, transparent 0 8px, rgba(0, 0, 0, 0.08) 8px 10px);
+  border: 4px solid #e3c25a;                 /* 금색 테두리 */
+  box-shadow: inset 0 0 0 3px #1f6b3a;       /* 그 안쪽의 진초록 선 */
+}
+
+.rug-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 28px;
+}
+
+/* 아래쪽 나무 널빤지 바닥 띠 + 소품 (소품은 띠 전체에 고르게 퍼뜨린다) */
+.room-props {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: flex-end;
+  min-height: 36px;
+  padding: 2px 10px 1px;
+  border-top: 3px solid var(--ink);
+  background: repeating-linear-gradient(90deg, var(--plank) 0 22px, var(--plank-dark) 22px 24px);
+}
+
+/* 잠긴 방: 이름표만 또렷하게 두고 방 안은 회색으로 */
 .room.locked {
-  filter: grayscale(1);
-  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.room.locked::after {
-  content: "🔒";
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  font-size: 14px;
+.room.locked .room-shelf,
+.room.locked .room-inside,
+.room.locked .room-props {
+  filter: grayscale(1);
+  opacity: 0.75;
 }
 
-/* ---------- 복도와 캐릭터 ---------- */
-.hall {
-  height: 64px;
-  background: var(--floor);
-  border: 4px solid var(--ink);
-  border-top: none;
-  box-shadow: var(--shadow);
+/* ---------- 두 층 사이의 길 ---------- */
+.road {
   position: relative;
+  height: 64px;
+  margin: 10px 0 16px; /* 아래쪽을 넉넉히: 2층 방 이름표가 위로 올라온다 */
+  border: 3px solid var(--ink);
   overflow: hidden;
+  /* 위에서부터: 벽돌 띠 → 잔디 → (차선 점선) → 회색 도로 → 잔디 */
+  background-color: var(--grass);
+  background-image:
+    repeating-linear-gradient(90deg, #d4785a 0 14px, #9e4f36 14px 16px),
+    linear-gradient(var(--grass), var(--grass)),
+    repeating-linear-gradient(90deg, #fff 0 14px, transparent 14px 30px),
+    linear-gradient(var(--road), var(--road));
+  background-size: 100% 10px, 100% 10px, 100% 3px, 100% 34px;
+  background-position: 0 0, 0 10px, 0 35px, 0 20px;
+  background-repeat: no-repeat;
 }
 
-/* 캐릭터는 그림 파일 없이 box-shadow로 점을 찍어서 그린다.
-   1칸 = 4px. (x y 색) 순서로 점 하나씩. */
-.player {
+/* 길가 소품 (app.js가 left 값을 % 로 넣는다) */
+.road-prop {
   position: absolute;
-  top: 10px;        /* 점은 이 위치에서 아래쪽으로 찍힌다 */
-  left: 20px;
-  width: 4px;
-  height: 4px;
-  box-shadow:
-    /* 머리카락 */
-    8px 0 #3a2a1a, 12px 0 #3a2a1a, 16px 0 #3a2a1a, 20px 0 #3a2a1a,
-    4px 4px #3a2a1a, 8px 4px #3a2a1a, 12px 4px #3a2a1a, 16px 4px #3a2a1a, 20px 4px #3a2a1a, 24px 4px #3a2a1a,
-    /* 얼굴 */
-    4px 8px #f3c9a0, 8px 8px #f3c9a0, 12px 8px #1a1a1a, 16px 8px #f3c9a0, 20px 8px #1a1a1a, 24px 8px #f3c9a0,
-    4px 12px #f3c9a0, 8px 12px #f3c9a0, 12px 12px #f3c9a0, 16px 12px #f3c9a0, 20px 12px #f3c9a0, 24px 12px #f3c9a0,
-    /* 정장 */
-    8px 16px #2b3a67, 12px 16px #fff, 16px 16px #fff, 20px 16px #2b3a67,
-    4px 20px #2b3a67, 8px 20px #2b3a67, 12px 20px #e84545, 16px 20px #e84545, 20px 20px #2b3a67, 24px 20px #2b3a67,
-    4px 24px #2b3a67, 8px 24px #2b3a67, 12px 24px #2b3a67, 16px 24px #2b3a67, 20px 24px #2b3a67, 24px 24px #2b3a67,
-    /* 바지 */
-    8px 28px #1a1a1a, 12px 28px #1a1a1a, 16px 28px #1a1a1a, 20px 28px #1a1a1a,
-    8px 32px #1a1a1a, 12px 32px #1a1a1a, 16px 32px #1a1a1a, 20px 32px #1a1a1a,
-    /* 신발 */
-    4px 36px #5a3a1a, 8px 36px #5a3a1a, 16px 36px #5a3a1a, 20px 36px #5a3a1a;
-  animation: walk 6s linear infinite alternate;
+  bottom: 4px;
 }
 
-@keyframes walk {
-  from { left: 20px; }
-  to   { left: calc(100% - 52px); }
+.road-prop.sprite-bush {
+  top: 1px;
+  bottom: auto;
+}
+
+/* ----- 걷는 캐릭터: 세 겹으로 되어 있다 -----
+   .walker      좌우로 왕복하고, 돌아올 때 scaleX(-1)로 몸을 뒤집는다
+   .walker-body 위아래로 통통 튄다 (바운스)
+   canvas 2장   다리 모은 그림 / 벌린 그림을 0.5초마다 번갈아 보여 준다 */
+.walker {
+  position: absolute;
+  bottom: 12px;
+  width: 30px;
+  height: 42px;
+  animation: stroll 18s linear infinite;
+}
+
+.walker-2 {
+  bottom: 8px;
+  animation-duration: 26s;
+  animation-delay: -11s; /* 음수 지연 = 이미 중간쯤 걷고 있는 상태로 시작 */
+}
+
+.walker-body {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  animation: bob 0.5s steps(1, end) infinite;
+}
+
+.walker canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  animation-duration: 0.5s;
+  animation-timing-function: steps(1, end); /* 부드럽게 말고 탁탁 바뀌게 */
+  animation-iteration-count: infinite;
+}
+
+.walker canvas:nth-child(1) { animation-name: frame-a; }
+.walker canvas:nth-child(2) { animation-name: frame-b; }
+
+@keyframes frame-a {
+  0%   { opacity: 1; }
+  50%  { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes frame-b {
+  0%   { opacity: 0; }
+  50%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 다리를 벌리는 순간(50%) 몸이 2px 올라간다 */
+@keyframes bob {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-2px); }
+  100% { transform: translateY(0); }
+}
+
+/* 오른쪽으로 갔다가, 몸을 뒤집고(scaleX(-1)) 왼쪽으로 돌아온다 */
+@keyframes stroll {
+  0%     { left: 2%;                  transform: scaleX(1); }
+  49.99% { left: calc(100% - 36px);   transform: scaleX(1); }
+  50%    { left: calc(100% - 36px);   transform: scaleX(-1); }
+  99.99% { left: 2%;                  transform: scaleX(-1); }
+  100%   { left: 2%;                  transform: scaleX(1); }
+}
+
+/* ---------- 맨 아래 범례 ---------- */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  background: var(--bar);
+  color: #d8dae0;
+  border: 4px solid var(--ink);
+  box-shadow: var(--shadow);
+  padding: 6px 14px;
+  font-size: 12px;
+  margin-top: 12px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* ---------- 부서 창(가계부) ---------- */
+#ledger-screen {
+  max-width: 680px;
+}
+
 .window-title {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--blue);
+  background: var(--bar);
   color: #fff;
   border: 4px solid var(--ink);
   border-bottom: none;
   padding: 8px 12px;
   font-size: 16px;
+}
+
+.window-name {
+  flex: 1;
 }
 
 .back-btn {
@@ -253,16 +602,42 @@ body {
   cursor: pointer;
 }
 
+.back-btn:active {
+  transform: translate(2px, 2px);
+}
+
+/* 방 안처럼 바닥 무늬를 깔고, 위에 벽 띠와 팀장 자리를 둔다 */
 .window-body {
-  background: var(--wall);
+  --floor: #dcefff;
+  background-color: var(--floor);
   border: 4px solid var(--ink);
   box-shadow: var(--shadow);
-  padding: 16px;
+  padding: 0 16px 16px;
+}
+
+.ledger-shelf {
+  height: 52px;
+  margin: 0 -16px 14px; /* 창 양쪽 끝까지 벽을 깐다 */
+  padding-top: 6px;
+}
+
+.ledger-desk {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.desk-caption {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #334;
 }
 
 .balance {
   background: #fff;
   border: 4px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
   padding: 12px 16px;
   margin-bottom: 16px;
 }
@@ -302,7 +677,7 @@ body {
 }
 
 #entry-amount {
-  width: 100px;
+  width: 110px;
 }
 
 .entry-form button {
@@ -369,4 +744,85 @@ body {
   text-align: center;
   color: #777;
   padding: 24px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 3px dashed var(--ink);
+}
+
+/* ---------- 중간 화면(태블릿): 한 층에 방 2개씩 ---------- */
+@media (max-width: 1000px) {
+  .floor {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .status-hint {
+    display: none; /* 좁으면 안내 문구는 숨긴다 */
+  }
+}
+
+/* ---------- 좁은 화면(휴대폰): 방을 세로로 쌓는다 ---------- */
+@media (max-width: 640px) {
+  .screen {
+    padding: 8px 8px 12px;
+  }
+
+  .floor {
+    grid-template-columns: 1fr;
+  }
+
+  .room-ceo {
+    grid-column: auto;
+  }
+
+  .building {
+    padding: 18px 6px 6px;
+  }
+
+  .status-bar,
+  .legend {
+    gap: 4px 10px;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .status-item + .status-item::before {
+    margin-right: 4px;
+  }
+
+  .xp-bar {
+    width: 70px;
+  }
+
+  .last-record {
+    display: none; /* 좁은 화면에서는 마지막 기록 시각을 숨겨 두 줄 안에 맞춘다 */
+  }
+
+  .entry-form {
+    flex-wrap: wrap;
+  }
+
+  #entry-title {
+    flex-basis: 100%;
+  }
+
+  #entry-amount {
+    flex: 1;
+  }
+
+  .ledger-shelf {
+    overflow: hidden;
+  }
+
+  .ledger-desk {
+    flex-wrap: wrap;
+  }
+}
+
+/* ---------- 움직임을 줄여 달라고 설정한 사용자에게는 모든 애니메이션을 끈다 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
