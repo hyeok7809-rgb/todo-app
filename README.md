@@ -12,3 +12,5 @@
 - 4단계(기획부) 설명과 숙제: [docs/lesson-04.md](docs/lesson-04.md)
 - 학습 커리큘럼 개요(14과정 66단원): [docs/curriculum/OUTLINE.md](docs/curriculum/OUTLINE.md)
 - 3개월 학습 일정표(12월~2월): [docs/SCHEDULE.md](docs/SCHEDULE.md)
+- 인수인계서(이어서 작업할 때 먼저 읽기): [docs/HANDOVER.md](docs/HANDOVER.md)
+- 커리큘럼 검토에서 남은 일: [docs/curriculum/REVIEW-TODO.md](docs/curriculum/REVIEW-TODO.md)
