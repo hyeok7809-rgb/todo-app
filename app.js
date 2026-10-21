@@ -1,6 +1,6 @@
 // =====================================================
-// 나의 가계부 - 1단계
-// 수입/지출을 추가하고, 잔액을 계산하고, 브라우저에 저장한다.
+// 나의 1인 회사 - 1단계 (재무부: 가계부)
+// 회사 지도에서 재무부에 들어가면 수입/지출을 기록하고 잔액을 본다.
 // =====================================================
 
 // ---------- 1. 데이터 ----------
@@ -19,6 +19,9 @@ const titleInput = document.getElementById("entry-title");
 const amountInput = document.getElementById("entry-amount");
 const list = document.getElementById("entry-list");
 const balanceText = document.getElementById("balance");
+const levelText = document.getElementById("level");
+const xpFill = document.getElementById("xp-fill");
+const xpText = document.getElementById("xp-text");
 
 // ---------- 3. 저장과 불러오기 ----------
 // 배열을 문자열(JSON)로 바꿔서 localStorage에 저장한다.
@@ -47,6 +50,7 @@ function addEntry(type, title, amount) {
   entries.push(entry);   // 배열 맨 뒤에 넣는다
   save();
   render();
+  showXpPop();
 }
 
 // 내역 한 건 삭제 (id가 같은 것만 빼고 나머지를 남긴다)
@@ -76,10 +80,41 @@ function formatMoney(number) {
   return number.toLocaleString("ko-KR") + "원";
 }
 
+// ---------- 4-1. 경험치와 레벨 ----------
+// 기록 한 건 = 10 경험치. 100 경험치마다 레벨이 하나 오른다.
+const XP_PER_ENTRY = 10;
+const XP_PER_LEVEL = 100;
+
+function totalXp() {
+  return entries.length * XP_PER_ENTRY;
+}
+
+function renderLevel() {
+  const xp = totalXp();
+  const level = Math.floor(xp / XP_PER_LEVEL) + 1; // 0~99 → Lv.1, 100~199 → Lv.2
+  const xpInLevel = xp % XP_PER_LEVEL;             // 이번 레벨에서 채운 양
+
+  levelText.textContent = level;
+  xpText.textContent = xpInLevel + " / " + XP_PER_LEVEL;
+  xpFill.style.width = (xpInLevel / XP_PER_LEVEL) * 100 + "%";
+}
+
+// "+10 EXP" 글자를 띄웠다가 1초 뒤에 지운다
+function showXpPop() {
+  const pop = document.createElement("div");
+  pop.className = "xp-pop";
+  pop.textContent = "+" + XP_PER_ENTRY + " EXP";
+  document.body.appendChild(pop);
+  setTimeout(function () {
+    pop.remove();
+  }, 1000);
+}
+
 // ---------- 5. 화면 그리기 ----------
 // entries 배열의 내용을 보고 화면 전체를 다시 그린다.
 function render() {
-  // 잔액
+  // 레벨과 잔액
+  renderLevel();
   balanceText.textContent = formatMoney(calculateBalance());
 
   // 목록을 비우고 처음부터 다시 만든다
@@ -132,7 +167,38 @@ function render() {
   }
 }
 
-// ---------- 6. 이벤트 연결 ----------
+// ---------- 6. 화면 전환 ----------
+// 지도 화면과 부서 화면 중 하나만 보여준다.
+const mapScreen = document.getElementById("map-screen");
+const ledgerScreen = document.getElementById("ledger-screen");
+
+function showScreen(screen) {
+  mapScreen.classList.add("hidden");
+  ledgerScreen.classList.add("hidden");
+  screen.classList.remove("hidden");
+}
+
+// 지도의 방 버튼을 누르면: 열린 방이면 들어가고, 잠긴 방이면 알려준다
+for (const roomBtn of document.querySelectorAll(".room")) {
+  roomBtn.addEventListener("click", function () {
+    if (roomBtn.classList.contains("locked")) {
+      alert("아직 잠겨 있어요. 다음 단계에서 열립니다!");
+      return;
+    }
+    if (roomBtn.dataset.room === "ledger") {
+      showScreen(ledgerScreen);
+    }
+  });
+}
+
+// "◀ 지도" 버튼을 누르면 지도로 돌아간다
+for (const backBtn of document.querySelectorAll("[data-back]")) {
+  backBtn.addEventListener("click", function () {
+    showScreen(mapScreen);
+  });
+}
+
+// ---------- 7. 이벤트 연결 ----------
 // 폼에서 "추가" 버튼을 누르거나 엔터를 치면 실행된다.
 form.addEventListener("submit", function (event) {
   event.preventDefault(); // 폼의 기본 동작(페이지 새로고침)을 막는다
@@ -152,7 +218,7 @@ form.addEventListener("submit", function (event) {
   titleInput.focus();
 });
 
-// ---------- 7. 시작 ----------
+// ---------- 8. 시작 ----------
 // 페이지가 열리면 저장된 내역을 불러와서 화면에 그린다.
 load();
 render();
