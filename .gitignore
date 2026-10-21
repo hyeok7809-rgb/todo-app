@@ -1,0 +1,6 @@
+# Claude Code 워크플로우가 쓰는 임시 작업 복사본
+.claude/worktrees/
+
+# 운영체제·편집기 임시 파일
+.DS_Store
+Thumbs.db
