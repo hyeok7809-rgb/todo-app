@@ -76,12 +76,58 @@
           <option value="expense">지출</option>
           <option value="income">수입</option>
         </select>
+        <select id="entry-category" title="카테고리">
+          <option value="food">식비</option>
+          <option value="transport">교통</option>
+          <option value="home">주거·공과금</option>
+          <option value="shopping">쇼핑</option>
+          <option value="health">건강·운동</option>
+          <option value="study">공부·구독</option>
+          <option value="etc">기타</option>
+        </select>
         <input type="text" id="entry-title" placeholder="내용 (예: 점심, 월급)" required>
         <input type="number" id="entry-amount" placeholder="금액" min="1" required>
         <button type="submit">추가</button>
       </form>
 
+      <!-- 이번 달 요약. app.js의 renderMonth()가 채운다 -->
+      <div class="card">
+        <p class="card-label" id="month-label">이번 달</p>
+        <p class="card-sub" id="month-totals"></p>
+        <div id="month-categories" class="bars"></div>
+      </div>
+
       <ul id="entry-list" class="entry-list"></ul>
+    </div>
+  </section>
+
+  <!-- ===== 화면 5: 사장실 (회사 요약 · 백업) ===== -->
+  <section id="ceo-screen" class="screen hidden">
+    <header class="window-title">
+      <button class="back-btn" data-back>◀ 지도</button>
+      <span class="window-name">👑 사장실 · 회사 현황과 백업</span>
+      <span class="pill"><b>사장님</b><span class="pill-status" data-lead-status data-room="ceo" data-status="rest">----</span></span>
+    </header>
+
+    <div class="window-body pattern-plain" style="--floor: #f6ecd2">
+      <div class="room-shelf ledger-shelf" data-deco></div>
+
+      <!-- 회사 요약. ceo.js의 renderCeo()가 채운다 -->
+      <div class="card">
+        <p class="card-label">회사 현황</p>
+        <div id="ceo-summary"></div>
+      </div>
+
+      <!-- 백업: 모든 기록은 이 브라우저 안에만 있다. 파일로 내보내 두자 -->
+      <div class="card">
+        <p class="card-label">백업</p>
+        <p class="card-sub">기록은 브라우저(localStorage) 안에만 저장됩니다. 브라우저 데이터를 지우거나 컴퓨터를 바꾸면 사라지니, 가끔 파일로 내려받아 두세요.</p>
+        <div class="card-actions">
+          <button class="btn btn-primary" id="backup-export">백업 파일 내려받기</button>
+          <label class="btn">백업 파일 가져오기<input type="file" id="backup-import" accept=".json,application/json" hidden></label>
+          <button class="btn btn-danger" id="backup-reset">전부 지우기</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -145,6 +191,7 @@
   <script src="curriculum.js"></script>
   <script src="routine.js"></script>
   <script src="study.js"></script>
+  <script src="ceo.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

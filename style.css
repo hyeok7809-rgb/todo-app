@@ -574,7 +574,8 @@ canvas.sprite {
 /* ---------- 부서 창(가계부) ---------- */
 #ledger-screen,
 #routine-screen,
-#study-screen {
+#study-screen,
+#ceo-screen {
   max-width: 680px;
 }
 
@@ -680,6 +681,67 @@ canvas.sprite {
 
 #entry-amount {
   width: 110px;
+}
+
+#entry-category {
+  max-width: 120px;
+}
+
+.entry-category {
+  font-size: 11px;
+  border: 2px solid var(--ink);
+  padding: 1px 5px;
+  background: #fff3c4;
+  flex: none;
+}
+
+/* 이번 달 카테고리 막대 */
+.bars {
+  margin-top: 8px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.bar-label {
+  width: 80px;
+  flex: none;
+}
+
+.bar-track {
+  flex: 1;
+  height: 12px;
+  border: 2px solid var(--ink);
+  background: #fff;
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--red);
+}
+
+.bar-amount {
+  width: 110px;
+  flex: none;
+  text-align: right;
+}
+
+/* 사장실 */
+.ceo-line {
+  margin: 4px 0;
+  font-size: 15px;
+}
+
+.btn-danger {
+  background: #fff;
+  color: var(--red);
 }
 
 .entry-form button {

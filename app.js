@@ -1,6 +1,6 @@
 // =====================================================
 // 나의 1인 회사 - app.js (공용 함수 + 회사 지도 + 재무부)
-// 파일 읽는 순서: sprites.js(그림) → curriculum.js(데이터) → routine.js(인사부) → study.js(교육부) → app.js(여기, 맨 마지막)
+// 파일 읽는 순서: sprites.js(그림) → curriculum.js(데이터) → routine.js(인사부) → study.js(교육부) → ceo.js(사장실) → app.js(여기, 맨 마지막)
 // 이 파일이 지도를 만들고, 저장된 데이터를 불러오고, 모든 화면을 그린다.
 // 지도의 방·가구·캐릭터 그림은 sprites.js의 drawSprite()가 그려 준다.
 // =====================================================
@@ -38,6 +38,7 @@ const ROOMS = [
 // HTML에서 id로 붙여둔 요소를 자바스크립트 변수로 가져온다.
 const form = document.getElementById("entry-form");
 const typeInput = document.getElementById("entry-type");
+const categoryInput = document.getElementById("entry-category");
 const titleInput = document.getElementById("entry-title");
 const amountInput = document.getElementById("entry-amount");
 const list = document.getElementById("entry-list");
@@ -118,11 +119,18 @@ function todayString() {
   return dateToString(new Date());
 }
 
+// 지출 카테고리. 값(영문)은 저장용, 이름은 화면용. 수입은 카테고리 없이 "income"으로 적는다
+const CATEGORIES = {
+  food: "식비", transport: "교통", home: "주거·공과금", shopping: "쇼핑",
+  health: "건강·운동", study: "공부·구독", etc: "기타", income: "수입",
+};
+
 // 내역 한 건 추가
-function addEntry(type, title, amount) {
+function addEntry(type, category, title, amount) {
   const entry = {
     id: Date.now(),        // 지금 시각(밀리초)을 고유번호로 사용. 나중에 "마지막 기록 시각"에도 쓴다
     type: type,            // "income" 또는 "expense"
+    category: type === "income" ? "income" : category, // 수입이면 카테고리를 따로 고르지 않는다
     title: title,
     amount: amount,
     date: todayString(),   // "2026-10-21" 형태
@@ -222,7 +230,7 @@ function roomDoneToday(roomId) {
   if (roomId === "ledger") return todayEntries().length > 0;
   if (roomId === "routine") return routineDoneToday(); // routine.js
   if (roomId === "study") return studyDoneToday();     // study.js
-  if (roomId === "ceo") return openRooms().every(function (room) { return roomDoneToday(room.id); });
+  if (roomId === "ceo") return openRooms().every(function (room) { return roomDoneToday(room.id); }); // 열린 부서 전부 완료
   return false;
 }
 
@@ -291,14 +299,61 @@ function renderStatus() {
   }
 }
 
-// 데이터가 바뀌면 화면 전체를 다시 그린다. 세 부서 화면 + 상단 바 + 지도의 상태.
+// 데이터가 바뀌면 화면 전체를 다시 그린다. 부서 화면 + 상단 바 + 지도의 상태.
 // 작은 앱이라 "뭐가 바뀌었든 전부 다시 그린다"가 가장 실수가 적다.
 function render() {
   renderLevel();
   renderLedger();
+  renderMonth();
   renderRoutine(); // routine.js
   renderStudy();   // study.js
-  renderStatus();  // 상태는 세 부서 결과를 보고 정하니 맨 마지막에
+  renderCeo();     // ceo.js
+  renderStatus();  // 상태는 부서 결과를 보고 정하니 맨 마지막에
+}
+
+// 재무부: 이번 달 수입·지출 합계와 카테고리별 지출 막대
+function renderMonth() {
+  const thisMonth = todayString().slice(0, 7); // "2026-10"
+  const monthly = entries.filter(function (entry) {
+    return entry.date.slice(0, 7) === thisMonth; // 날짜 앞 7글자가 같으면 같은 달
+  });
+
+  let income = 0;
+  let expense = 0;
+  const byCategory = {}; // { food: 123000, transport: 45000 }
+  for (const entry of monthly) {
+    if (entry.type === "income") {
+      income = income + entry.amount;
+    } else {
+      expense = expense + entry.amount;
+      const key = entry.category || "etc"; // 옛날 기록엔 카테고리가 없으니 "기타"로
+      byCategory[key] = (byCategory[key] || 0) + entry.amount;
+    }
+  }
+
+  document.getElementById("month-label").textContent = thisMonth.replace("-", "년 ") + "월";
+  document.getElementById("month-totals").textContent =
+    "수입 " + formatMoney(income) + " · 지출 " + formatMoney(expense) + " · 남은 돈 " + formatMoney(income - expense);
+
+  // 지출이 큰 순서로 막대를 그린다. 가장 큰 항목이 100% 너비
+  const bars = document.getElementById("month-categories");
+  bars.innerHTML = "";
+  const keys = Object.keys(byCategory).sort(function (a, b) { return byCategory[b] - byCategory[a]; });
+  const biggest = keys.length > 0 ? byCategory[keys[0]] : 0;
+  for (const key of keys) {
+    const row = makeElement("div", "bar-row");
+    row.appendChild(makeElement("span", "bar-label", CATEGORIES[key] || key));
+    const track = makeElement("span", "bar-track");
+    const fill = makeElement("span", "bar-fill");
+    fill.style.width = (byCategory[key] / biggest) * 100 + "%";
+    track.appendChild(fill);
+    row.appendChild(track);
+    row.appendChild(makeElement("span", "bar-amount", formatMoney(byCategory[key])));
+    bars.appendChild(row);
+  }
+  if (keys.length === 0) {
+    bars.appendChild(makeElement("p", "card-sub", "이번 달 지출이 아직 없어요."));
+  }
 }
 
 // 재무부: 잔액과 내역 목록
@@ -319,6 +374,7 @@ function renderLedger() {
   for (const entry of recentFirst) {
     const item = makeElement("li");
     const title = makeElement("span", "entry-title", entry.title);
+    const category = makeElement("span", "entry-category", CATEGORIES[entry.category] || "기타");
     const date = makeElement("span", "entry-date", entry.date);
 
     let amount;
@@ -335,6 +391,7 @@ function renderLedger() {
     });
 
     item.appendChild(title);
+    item.appendChild(category);
     item.appendChild(date);
     item.appendChild(amount);
     item.appendChild(deleteBtn);
@@ -562,7 +619,7 @@ function connectRooms() {
       if (screen) {
         showScreen(screen);
       } else {
-        alert("사장실은 나중에 꾸밉니다");
+        alert("이 방은 아직 화면이 없어요.");
       }
     });
 
@@ -595,7 +652,7 @@ form.addEventListener("submit", function (event) {
     return; // 내용이 비었거나 금액이 이상하면 아무것도 안 한다
   }
 
-  addEntry(typeInput.value, title, amount);
+  addEntry(typeInput.value, categoryInput.value, title, amount);
 
   // 입력칸 비우고 커서를 내용 칸으로 되돌린다
   titleInput.value = "";
