@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>나의 1인 회사</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== 화면 1: 회사 지도 ===== -->
+  <section id="map-screen" class="screen">
+
+    <!-- 맨 위 상태 바. 왼쪽부터: 상태 요약 | 날짜(요일) | 레벨·경험치 | 오늘 기록 | 안내 문구
+         글자 내용은 app.js의 renderStatus()가 채운다. 채우기 전에는 "----------" 만 보인다. -->
+    <header class="status-bar">
+      <span class="status-item status-summary" id="status-summary">----------</span>
+      <span class="status-item" id="today-date">----------</span>
+      <span class="status-item status-level">
+        <span class="level-badge">Lv.<span id="level">-</span></span>
+        <span class="xp-bar"><span class="xp-fill" id="xp-fill"></span></span>
+        <span class="xp-text" id="xp-text">- / 100</span>
+      </span>
+      <span class="status-item"><span id="today-count">----------</span><span class="last-record" id="last-record"></span></span>
+      <span class="status-item status-hint">방을 눌러서 들어가세요</span>
+    </header>
+
+    <!-- 건물: 1층(위, #floor-1) · 길 · 2층(아래, #floor-2).
+         방(부서)은 app.js의 ROOMS 목록을 보고 buildMap()이 자동으로 만들어 넣는다.
+         실제 건물처럼 1층을 아래로 두려면 여기서 두 floor의 순서만 바꾸면 된다.
+
+         buildMap()이 만드는 방 하나의 구조는 이렇다 (HTML만 열어 봐도 알 수 있게 적어 둔다):
+           <div class="room open" data-room="ledger" role="button" tabindex="0" style="--floor: #dcefff">
+             <span class="room-tag">📒 재무부 · 1명 · [상태 칩]</span>   이름표 (위쪽 테두리에 걸침)
+             <div class="room-shelf">창문 · 칠판 · 시계 <div class="room-door">문</div></div>   위쪽 벽 띠
+             <div class="room-inside pattern-check">팀장 자리 → 직원 책상 3×2</div>          바닥
+             <div class="room-props">화분 · 복사기</div>                                     아래쪽 널빤지 바닥 띠
+           </div>
+         사장실은 .room-inside 안에 책상 격자 대신 .rug(카펫)가 들어간다. -->
+    <div class="building">
+      <div class="floor" id="floor-1"></div>
+      <div class="road" id="road"></div>
+      <div class="floor" id="floor-2"></div>
+    </div>
+
+    <!-- 맨 아래 범례: 상태 표시가 무슨 뜻인지. 칩 색은 data-status 값으로 정해진다 -->
+    <footer class="legend">
+      <span class="legend-item"><span class="chip" data-status="problem">⚠ 문제</span>22시가 지났는데 오늘 기록이 없음</span>
+      <span class="legend-item"><span class="chip" data-status="working">💬 근무 중</span>일하는 시간(9~21시), 기록을 기다리는 중</span>
+      <span class="legend-item"><span class="chip" data-status="done">✅ 완료</span>오늘 기록을 남김</span>
+      <span class="legend-item"><span class="chip" data-status="rest">💤 쉬는 중</span>출근 전(9시 이전) 또는 아직 안 열린 부서</span>
+    </footer>
+  </section>
+
+  <!-- ===== 화면 2: 재무부 (가계부) ===== -->
+  <section id="ledger-screen" class="screen hidden">
+    <header class="window-title">
+      <button class="back-btn" data-back>◀ 지도</button>
+      <span class="window-name">📒 재무부 · 가계부</span>
+      <!-- 팀장(나)의 오늘 상태. data-lead-status 가 붙어 있어서 renderStatus()가 채운다 -->
+      <span class="pill"><b>팀장</b><span class="pill-status" data-lead-status data-room="ledger" data-status="rest">----</span></span>
+    </header>
+
+    <div class="window-body pattern-check">
+      <!-- 방 느낌을 내는 장식(벽 띠·팀장 자리). app.js의 buildLedgerDeco()가 그림을 넣는다 -->
+      <div class="room-shelf ledger-shelf" data-deco></div>
+      <div class="ledger-desk" id="ledger-desk"></div>
+
+      <div class="balance">
+        <p class="balance-label">현재 잔액</p>
+        <p class="balance-amount" id="balance">0원</p>
+      </div>
+
+      <form id="entry-form" class="entry-form">
+        <select id="entry-type">
+          <option value="expense">지출</option>
+          <option value="income">수입</option>
+        </select>
+        <select id="entry-category" title="카테고리">
+          <option value="food">식비</option>
+          <option value="transport">교통</option>
+          <option value="home">주거·공과금</option>
+          <option value="shopping">쇼핑</option>
+          <option value="health">건강·운동</option>
+          <option value="study">공부·구독</option>
+          <option value="etc">기타</option>
+        </select>
+        <input type="text" id="entry-title" placeholder="내용 (예: 점심, 월급)" required>
+        <input type="number" id="entry-amount" placeholder="금액" min="1" required>
+        <button type="submit">추가</button>
+      </form>
+
+      <!-- 이번 달 요약. app.js의 renderMonth()가 채운다 -->
+      <div class="card">
+        <p class="card-label" id="month-label">이번 달</p>
+        <p class="card-sub" id="month-totals"></p>
+        <div id="month-categories" class="bars"></div>
+      </div>
+
+      <ul id="entry-list" class="entry-list"></ul>
+    </div>
+  </section>
+
+  <!-- ===== 화면 6: 자산관리부 (계좌별 잔고 · 순자산) ===== -->
+  <section id="assets-screen" class="screen hidden">
+    <header class="window-title">
+      <button class="back-btn" data-back>◀ 지도</button>
+      <span class="window-name">💰 자산관리부 · 계좌와 순자산</span>
+      <span class="pill"><b>팀장</b><span class="pill-status" data-lead-status data-room="assets" data-status="rest">----</span></span>
+    </header>
+
+    <div class="window-body pattern-dots" style="--floor: #ffe6c4">
+      <div class="room-shelf ledger-shelf" data-deco></div>
+
+      <!-- 순자산 카드. assets.js의 renderAssets()가 채운다 -->
+      <div class="card">
+        <p class="card-label">순자산 (자산 − 부채)</p>
+        <p class="card-big" id="net-worth">0원</p>
+        <p class="card-sub" id="net-worth-sub"></p>
+      </div>
+
+      <!-- 계좌 목록: 계좌마다 새 잔고를 적고 "기록"을 누르면 오늘 날짜로 저장된다 -->
+      <ul id="account-list" class="account-list"></ul>
+
+      <!-- 계좌 추가 -->
+      <form id="account-form" class="entry-form">
+        <select id="account-type">
+          <option value="bank">은행</option>
+          <option value="stock">증권</option>
+          <option value="cash">현금</option>
+          <option value="debt">부채</option>
+        </select>
+        <input type="text" id="account-name" placeholder="계좌 이름 (예: 주거래 통장)" required>
+        <button type="submit">계좌 추가</button>
+      </form>
+
+      <h3 class="section-title">순자산 변화</h3>
+      <div id="asset-history" class="card"></div>
+      <p class="help-text">잔고 기록 1회 = 10 EXP. 매일이 아니라 주 1회 점검이면 충분합니다. 7일 넘게 안 적으면 팀장 상태가 "근무 중"으로 돌아갑니다.</p>
+    </div>
+  </section>
+
+  <!-- ===== 화면 5: 사장실 (회사 요약 · 백업) ===== -->
+  <section id="ceo-screen" class="screen hidden">
+    <header class="window-title">
+      <button class="back-btn" data-back>◀ 지도</button>
+      <span class="window-name">👑 사장실 · 회사 현황과 백업</span>
+      <span class="pill"><b>사장님</b><span class="pill-status" data-lead-status data-room="ceo" data-status="rest">----</span></span>
+    </header>
+
+    <div class="window-body pattern-plain" style="--floor: #f6ecd2">
+      <div class="room-shelf ledger-shelf" data-deco></div>
+
+      <!-- 회사 요약. ceo.js의 renderCeo()가 채운다 -->
+      <div class="card">
+        <p class="card-label">회사 현황</p>
+        <div id="ceo-summary"></div>
+      </div>
+
+      <!-- 백업: 모든 기록은 이 브라우저 안에만 있다. 파일로 내보내 두자 -->
+      <div class="card">
+        <p class="card-label">백업</p>
+        <p class="card-sub">기록은 브라우저(localStorage) 안에만 저장됩니다. 브라우저 데이터를 지우거나 컴퓨터를 바꾸면 사라지니, 가끔 파일로 내려받아 두세요.</p>
+        <div class="card-actions">
+          <button class="btn btn-primary" id="backup-export">백업 파일 내려받기</button>
+          <label class="btn">백업 파일 가져오기<input type="file" id="backup-import" accept=".json,application/json" hidden></label>
+          <button class="btn btn-danger" id="backup-reset">전부 지우기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 화면 3: 인사부 (데일리 루틴) ===== -->
+  <section id="routine-screen" class="screen hidden">
+    <header class="window-title">
+      <button class="back-btn" data-back>◀ 지도</button>
+      <span class="window-name">📋 인사부 · 데일리 루틴</span>
+      <span class="pill"><b>팀장</b><span class="pill-status" data-lead-status data-room="routine" data-status="rest">----</span></span>
+    </header>
+
+    <div class="window-body pattern-check" style="--floor: #ffdede">
+      <div class="room-shelf ledger-shelf" data-deco></div>
+
+      <!-- 연속 달성일 카드. 숫자는 routine.js의 renderRoutine()이 채운다 -->
+      <div class="card">
+        <p class="card-label">연속 달성일 🔥</p>
+        <p class="card-big"><span id="streak">0</span>일</p>
+        <p class="card-sub" id="routine-summary"></p>
+      </div>
+
+      <!-- 오늘의 체크 목록 -->
+      <ul id="routine-list" class="routine-list"></ul>
+
+      <h3 class="section-title">최근 14일</h3>
+      <div id="routine-history" class="history"></div>
+      <p class="help-text">체크 1개 = 10 EXP. 가계부 기록은 재무부에 내역을 적으면 자동으로 체크됩니다.</p>
+    </div>
+  </section>
+
+  <!-- ===== 화면 4: 교육부 (커리큘럼 진도) ===== -->
+  <section id="study-screen" class="screen hidden">
+    <header class="window-title">
+      <button class="back-btn" data-back>◀ 지도</button>
+      <span class="window-name">📚 교육부 · 코딩·AI 커리큘럼</span>
+      <span class="pill"><b>팀장</b><span class="pill-status" data-lead-status data-room="study" data-status="rest">----</span></span>
+    </header>
+
+    <div class="window-body pattern-dots" style="--floor: #e9e0ff">
+      <div class="room-shelf ledger-shelf" data-deco></div>
+
+      <!-- 진도 카드. study.js의 renderStudy()가 채운다 -->
+      <div class="card">
+        <p class="card-label">진도</p>
+        <p class="card-big"><span id="study-done">0</span> / <span id="study-total">66</span> 단원</p>
+        <span class="xp-bar xp-bar-wide"><span class="xp-fill" id="study-fill"></span></span>
+        <p class="card-sub" id="study-sub"></p>
+      </div>
+
+      <!-- 다음 단원 카드 -->
+      <div class="card next-card" id="next-unit"></div>
+
+      <!-- 과정별 단원 목록 -->
+      <div id="study-modules"></div>
+      <p class="help-text">단원 문서는 docs/curriculum/ 에 있습니다. 끝내면 체크하세요. 경험치 = 예상 시간 × 20.</p>
+    </div>
+  </section>
+
+  <!-- 읽는 순서가 중요하다: 그림 → 데이터 → 인사부 → 교육부 → app.js(맨 마지막, 시작 담당) -->
+  <script src="sprites.js"></script>
+  <script src="curriculum.js"></script>
+  <script src="routine.js"></script>
+  <script src="study.js"></script>
+  <script src="assets.js"></script>
+  <script src="ceo.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
