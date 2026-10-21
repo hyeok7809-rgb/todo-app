@@ -575,6 +575,7 @@ canvas.sprite {
 #ledger-screen,
 #routine-screen,
 #study-screen,
+#assets-screen,
 #ceo-screen {
   max-width: 680px;
 }
@@ -731,6 +732,68 @@ canvas.sprite {
   width: 110px;
   flex: none;
   text-align: right;
+}
+
+/* ---------- 자산관리부 ---------- */
+.account-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
+}
+
+.account-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.account-item.debt {
+  background: #fff1f1;
+}
+
+.account-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.account-meta {
+  font-size: 12px;
+  color: #556;
+}
+
+.balance-input {
+  width: 120px;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 6px;
+  border: 3px solid var(--ink);
+}
+
+.btn-small {
+  font-size: 13px;
+  padding: 5px 10px;
+}
+
+.history-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+.history-date {
+  color: #556;
+  font-size: 13px;
+  width: 92px;
+  flex: none;
 }
 
 /* 사장실 */

@@ -21,11 +21,12 @@
 | `curriculum.js` | 66단원 데이터. **직접 고치지 말고** `docs/curriculum/modules.json` 수정 후 `python3 docs/curriculum/make-curriculum-js.py` |
 | `routine.js` | 인사부: 루틴 체크, 연속 달성일 |
 | `study.js` | 교육부: 커리큘럼 진도, 예정일 |
+| `assets.js` | 자산관리부: 계좌, 날짜별 잔고 스냅샷, 순자산 (주 1회 점검 부서, `ROOMS`의 `weekly: true`) |
 | `ceo.js` | 사장실: 회사 현황, JSON 백업 내보내기/가져오기/초기화 (`BACKUP_KEYS`에 저장 키 목록) |
 | `app.js` | 공용 함수(`makeElement`, `todayString`…) + 지도(`ROOMS`, `buildRoom`) + 재무부 + **시작(8번 구역)**. 항상 맨 마지막에 읽힌다 |
 - `app.js`는 `// ---------- N. 제목 ----------` 번호 구역 구조를 유지한다.
 - 새 부서를 열 때: `ROOMS`에서 `open: true`, `index.html`에 `#id-screen` 추가, `id.js` 파일 추가, `roomDoneToday()`에 한 줄, `render()`에 `renderXxx()` 한 줄.
-- 저장은 전부 `localStorage`. 키: `ledger-entries`, `routine-checks`, `study-progress`. 불러올 때 `try/catch` + 모양 검사 필수. 새 키를 만들면 `ceo.js`의 `BACKUP_KEYS`에도 추가.
+- 저장은 전부 `localStorage`. 키: `ledger-entries`, `routine-checks`, `study-progress`, `asset-accounts`. 불러올 때 `try/catch` + 모양 검사 필수. 새 키를 만들면 `ceo.js`의 `BACKUP_KEYS`에도 추가.
 - 날짜는 현지 시간 기준 `dateToString()`/`todayString()`만 쓴다. `toISOString()` 금지(UTC라 밤에 날짜가 어긋남).
 
 ## 검증 방법

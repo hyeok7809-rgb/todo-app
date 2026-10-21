@@ -8,7 +8,7 @@
 
 // ---------- 1. 데이터 ----------
 // 백업에 넣을 localStorage 키 목록. 새 부서를 열어 키가 늘면 여기에 추가한다.
-const BACKUP_KEYS = ["ledger-entries", "routine-checks", "study-progress"];
+const BACKUP_KEYS = ["ledger-entries", "routine-checks", "study-progress", "asset-accounts"];
 
 // ---------- 2. 기능 함수 ----------
 // 세 저장소를 한 객체로 묶는다. 모양: { version: 1, savedAt: "...", data: { "ledger-entries": [...], ... } }
@@ -83,7 +83,8 @@ function renderCeo() {
   const level = Math.floor(xp / XP_PER_LEVEL) + 1;
   const lines = [
     "Lv." + level + " · 누적 " + xp + " EXP",
-    "가계부 " + entries.length + "건 · 루틴 체크 " + (routineXp() / XP_PER_CHECK) + "개 · 완료 단원 " + Object.keys(studyDone).length + "개",
+    "가계부 " + entries.length + "건 · 루틴 체크 " + (routineXp() / XP_PER_CHECK) + "개 · 완료 단원 " + Object.keys(studyDone).length + "개 · 잔고 기록 " + (assetXp() / XP_PER_UPDATE) + "회",
+    "순자산 " + formatMoney(netWorth().net),
     "연속 달성일 " + routineStreak() + "일",
   ];
   ceoSummary.innerHTML = "";

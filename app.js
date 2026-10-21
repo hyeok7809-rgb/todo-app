@@ -1,6 +1,6 @@
 // =====================================================
 // 나의 1인 회사 - app.js (공용 함수 + 회사 지도 + 재무부)
-// 파일 읽는 순서: sprites.js(그림) → curriculum.js(데이터) → routine.js(인사부) → study.js(교육부) → ceo.js(사장실) → app.js(여기, 맨 마지막)
+// 파일 읽는 순서: sprites.js(그림) → curriculum.js(데이터) → routine.js → study.js → assets.js → ceo.js → app.js(여기, 맨 마지막)
 // 이 파일이 지도를 만들고, 저장된 데이터를 불러오고, 모든 화면을 그린다.
 // 지도의 방·가구·캐릭터 그림은 sprites.js의 drawSprite()가 그려 준다.
 // =====================================================
@@ -26,7 +26,7 @@ const STORAGE_KEY = "ledger-entries";
 //   ceo     : true면 사장실 (책상 격자 대신 카펫과 소파)
 const ROOMS = [
   { id: "ledger",  icon: "📒", name: "재무부",    floor: 1, open: true,  pattern: "check",   color: "#dcefff", shelf: ["WINDOW", "WHITEBOARD", "CLOCK"],              props: ["PLANT", "COPIER"],  desc: "가계부 · 잔액" },
-  { id: "assets",  icon: "💰", name: "자산관리부", floor: 1, open: false, pattern: "dots",    color: "#ffe6c4", shelf: ["WINDOW", "BOOKSHELF", "CLOCK"],               props: ["CABINET", "PLANT"], desc: "3단계에서 열림" },
+  { id: "assets",  icon: "💰", name: "자산관리부", floor: 1, open: true,  pattern: "dots",    color: "#ffe6c4", shelf: ["WINDOW", "BOOKSHELF", "CLOCK"],               props: ["CABINET", "PLANT"], desc: "계좌별 잔고 · 순자산", weekly: true },
   { id: "report",  icon: "📊", name: "기획부",    floor: 1, open: false, pattern: "stripes", color: "#dff5dc", shelf: ["WHITEBOARD", "WINDOW", "CLOCK"],              props: ["COPIER", "COOLER"], desc: "4단계에서 열림" },
   { id: "routine", icon: "📋", name: "인사부",    floor: 1, open: true,  pattern: "check",   color: "#ffdede", shelf: ["WINDOW", "BOOKSHELF", "WHITEBOARD"],          props: ["SOFA", "PLANT"],    desc: "데일리 루틴 · 연속 달성일" },
   { id: "study",   icon: "📚", name: "교육부",    floor: 2, open: true,  pattern: "dots",    color: "#e9e0ff", shelf: ["BOOKSHELF", "WHITEBOARD", "WINDOW"],          props: ["PLANT", "CABINET"], desc: "코딩·AI 커리큘럼 진도" },
@@ -175,7 +175,7 @@ const XP_PER_ENTRY = 10;
 const XP_PER_LEVEL = 100;
 
 function totalXp() {
-  return entries.length * XP_PER_ENTRY + routineXp() + studyXp(); // routineXp는 routine.js, studyXp는 study.js
+  return entries.length * XP_PER_ENTRY + routineXp() + studyXp() + assetXp(); // 각 부서 파일의 함수
 }
 
 function renderLevel() {
@@ -220,9 +220,9 @@ function todayEntries() {
   });
 }
 
-// 사장실을 뺀, 열려 있는 부서 목록
+// 사장실을 뺀, 열려 있는 "매일 할 일" 부서 목록. weekly 부서(자산관리부)는 오늘 요약에서 뺀다
 function openRooms() {
-  return ROOMS.filter(function (room) { return room.open && !room.ceo; });
+  return ROOMS.filter(function (room) { return room.open && !room.ceo && !room.weekly; });
 }
 
 // 부서별 "오늘 할 일을 했는가". 방 id로 구분한다. 사장실은 열린 부서 전부가 끝났을 때 완료.
@@ -230,6 +230,7 @@ function roomDoneToday(roomId) {
   if (roomId === "ledger") return todayEntries().length > 0;
   if (roomId === "routine") return routineDoneToday(); // routine.js
   if (roomId === "study") return studyDoneToday();     // study.js
+  if (roomId === "assets") return assetsUpdatedRecently(); // assets.js: 매일이 아니라 주 1회 점검
   if (roomId === "ceo") return openRooms().every(function (room) { return roomDoneToday(room.id); }); // 열린 부서 전부 완료
   return false;
 }
@@ -307,6 +308,7 @@ function render() {
   renderMonth();
   renderRoutine(); // routine.js
   renderStudy();   // study.js
+  renderAssets();  // assets.js
   renderCeo();     // ceo.js
   renderStatus();  // 상태는 부서 결과를 보고 정하니 맨 마지막에
 }
@@ -675,6 +677,7 @@ connectRooms();
 load();        // 재무부 내역
 routineLoad(); // 인사부 체크 (routine.js)
 studyLoad();   // 교육부 진도 (study.js)
+assetLoad();   // 자산관리부 계좌·잔고 (assets.js)
 render();
 
 // 시간이 지나면 상태(근무 중 → 문제 등)가 바뀌니 1분마다 다시 계산한다

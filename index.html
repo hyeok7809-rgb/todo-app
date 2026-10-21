@@ -101,6 +101,45 @@
     </div>
   </section>
 
+  <!-- ===== 화면 6: 자산관리부 (계좌별 잔고 · 순자산) ===== -->
+  <section id="assets-screen" class="screen hidden">
+    <header class="window-title">
+      <button class="back-btn" data-back>◀ 지도</button>
+      <span class="window-name">💰 자산관리부 · 계좌와 순자산</span>
+      <span class="pill"><b>팀장</b><span class="pill-status" data-lead-status data-room="assets" data-status="rest">----</span></span>
+    </header>
+
+    <div class="window-body pattern-dots" style="--floor: #ffe6c4">
+      <div class="room-shelf ledger-shelf" data-deco></div>
+
+      <!-- 순자산 카드. assets.js의 renderAssets()가 채운다 -->
+      <div class="card">
+        <p class="card-label">순자산 (자산 − 부채)</p>
+        <p class="card-big" id="net-worth">0원</p>
+        <p class="card-sub" id="net-worth-sub"></p>
+      </div>
+
+      <!-- 계좌 목록: 계좌마다 새 잔고를 적고 "기록"을 누르면 오늘 날짜로 저장된다 -->
+      <ul id="account-list" class="account-list"></ul>
+
+      <!-- 계좌 추가 -->
+      <form id="account-form" class="entry-form">
+        <select id="account-type">
+          <option value="bank">은행</option>
+          <option value="stock">증권</option>
+          <option value="cash">현금</option>
+          <option value="debt">부채</option>
+        </select>
+        <input type="text" id="account-name" placeholder="계좌 이름 (예: 주거래 통장)" required>
+        <button type="submit">계좌 추가</button>
+      </form>
+
+      <h3 class="section-title">순자산 변화</h3>
+      <div id="asset-history" class="card"></div>
+      <p class="help-text">잔고 기록 1회 = 10 EXP. 매일이 아니라 주 1회 점검이면 충분합니다. 7일 넘게 안 적으면 팀장 상태가 "근무 중"으로 돌아갑니다.</p>
+    </div>
+  </section>
+
   <!-- ===== 화면 5: 사장실 (회사 요약 · 백업) ===== -->
   <section id="ceo-screen" class="screen hidden">
     <header class="window-title">
@@ -191,6 +230,7 @@
   <script src="curriculum.js"></script>
   <script src="routine.js"></script>
   <script src="study.js"></script>
+  <script src="assets.js"></script>
   <script src="ceo.js"></script>
   <script src="app.js"></script>
 </body>
