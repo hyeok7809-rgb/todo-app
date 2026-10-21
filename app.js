@@ -1,6 +1,7 @@
 // =====================================================
-// 나의 1인 회사 - 1단계 (재무부: 가계부) + 1.5단계 (회사 지도) + 1.6단계 (픽셀 오피스)
-// 회사 지도에서 재무부에 들어가면 수입/지출을 기록하고 잔액을 본다.
+// 나의 1인 회사 - app.js (공용 함수 + 회사 지도 + 재무부)
+// 파일 읽는 순서: sprites.js(그림) → curriculum.js(데이터) → routine.js(인사부) → study.js(교육부) → app.js(여기, 맨 마지막)
+// 이 파일이 지도를 만들고, 저장된 데이터를 불러오고, 모든 화면을 그린다.
 // 지도의 방·가구·캐릭터 그림은 sprites.js의 drawSprite()가 그려 준다.
 // =====================================================
 
@@ -27,8 +28,8 @@ const ROOMS = [
   { id: "ledger",  icon: "📒", name: "재무부",    floor: 1, open: true,  pattern: "check",   color: "#dcefff", shelf: ["WINDOW", "WHITEBOARD", "CLOCK"],              props: ["PLANT", "COPIER"],  desc: "가계부 · 잔액" },
   { id: "assets",  icon: "💰", name: "자산관리부", floor: 1, open: false, pattern: "dots",    color: "#ffe6c4", shelf: ["WINDOW", "BOOKSHELF", "CLOCK"],               props: ["CABINET", "PLANT"], desc: "3단계에서 열림" },
   { id: "report",  icon: "📊", name: "기획부",    floor: 1, open: false, pattern: "stripes", color: "#dff5dc", shelf: ["WHITEBOARD", "WINDOW", "CLOCK"],              props: ["COPIER", "COOLER"], desc: "4단계에서 열림" },
-  { id: "routine", icon: "📋", name: "인사부",    floor: 1, open: false, pattern: "check",   color: "#ffdede", shelf: ["WINDOW", "BOOKSHELF", "WHITEBOARD"],          props: ["SOFA", "PLANT"],    desc: "5단계에서 열림" },
-  { id: "study",   icon: "📚", name: "교육부",    floor: 2, open: false, pattern: "dots",    color: "#e9e0ff", shelf: ["BOOKSHELF", "WHITEBOARD", "WINDOW"],          props: ["PLANT", "CABINET"], desc: "6단계에서 열림" },
+  { id: "routine", icon: "📋", name: "인사부",    floor: 1, open: true,  pattern: "check",   color: "#ffdede", shelf: ["WINDOW", "BOOKSHELF", "WHITEBOARD"],          props: ["SOFA", "PLANT"],    desc: "데일리 루틴 · 연속 달성일" },
+  { id: "study",   icon: "📚", name: "교육부",    floor: 2, open: true,  pattern: "dots",    color: "#e9e0ff", shelf: ["BOOKSHELF", "WHITEBOARD", "WINDOW"],          props: ["PLANT", "CABINET"], desc: "코딩·AI 커리큘럼 진도" },
   { id: "ai",      icon: "🤖", name: "AI 직원실", floor: 2, open: false, pattern: "grid",    color: "#d8f5f0", shelf: ["WINDOW", "CLOCK", "WHITEBOARD"],              props: ["COOLER", "COPIER"], desc: "8단계에서 열림" },
   { id: "ceo",     icon: "👑", name: "사장실",    floor: 2, open: true,  pattern: "plain",   color: "#f6ecd2", shelf: ["WINDOW", "WHITEBOARD", "CLOCK", "WINDOW"],    props: ["CABINET", "PLANT"], desc: "사장 = 나", ceo: true },
 ];
@@ -104,13 +105,17 @@ function load() {
 }
 
 // ---------- 4. 기능 함수 ----------
-// 오늘 날짜를 "2026-10-21" 모양의 문자열로 만든다. (내 컴퓨터의 시간 기준)
-function todayString() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = twoDigits(now.getMonth() + 1); // getMonth()는 0부터 시작해서 +1
-  const day = twoDigits(now.getDate());
+// Date 객체를 "2026-10-21" 모양의 문자열로 만든다. (내 컴퓨터의 시간 기준)
+function dateToString(date) {
+  const year = date.getFullYear();
+  const month = twoDigits(date.getMonth() + 1); // getMonth()는 0부터 시작해서 +1
+  const day = twoDigits(date.getDate());
   return year + "-" + month + "-" + day;
+}
+
+// 오늘 날짜 문자열. 인사부(routine.js)와 교육부(study.js)도 이 함수를 쓴다
+function todayString() {
+  return dateToString(new Date());
 }
 
 // 내역 한 건 추가
@@ -125,7 +130,7 @@ function addEntry(type, title, amount) {
   entries.push(entry);   // 배열 맨 뒤에 넣는다
   save();
   render();
-  showXpPop();
+  showXpPop(XP_PER_ENTRY);
 }
 
 // 내역 한 건 삭제 (id가 같은 것만 빼고 나머지를 남긴다)
@@ -156,12 +161,13 @@ function formatMoney(number) {
 }
 
 // ---------- 4-1. 경험치와 레벨 ----------
-// 기록 한 건 = 10 경험치. 100 경험치마다 레벨이 하나 오른다.
+// 경험치는 세 부서에서 온다. 가계부 기록 1건 = 10, 루틴 체크 1개 = 10, 단원 완료 = 그 단원의 경험치(40~100).
+// 100 경험치마다 레벨이 하나 오른다.
 const XP_PER_ENTRY = 10;
 const XP_PER_LEVEL = 100;
 
 function totalXp() {
-  return entries.length * XP_PER_ENTRY;
+  return entries.length * XP_PER_ENTRY + routineXp() + studyXp(); // routineXp는 routine.js, studyXp는 study.js
 }
 
 function renderLevel() {
@@ -175,8 +181,8 @@ function renderLevel() {
 }
 
 // "+10 EXP" 글자를 띄웠다가 1초 뒤에 지운다
-function showXpPop() {
-  const pop = makeElement("div", "xp-pop", "+" + XP_PER_ENTRY + " EXP");
+function showXpPop(amount) {
+  const pop = makeElement("div", "xp-pop", "+" + amount + " EXP");
   document.body.appendChild(pop);
   setTimeout(function () {
     pop.remove();
@@ -184,11 +190,11 @@ function showXpPop() {
 }
 
 // ---------- 4-2. 오늘 상태 계산 ----------
-// 재무부 팀장(= 나)이 오늘 어떤 상태인지 네 가지 중 하나로 정한다.
-//   done    ✅ 완료   : 오늘 기록이 1건 이상
-//   working 💬 근무 중: 기록은 없지만 지금이 9시~21시 (아직 할 수 있는 시간)
-//   problem ⚠ 문제   : 기록이 없는데 22시가 넘음
-//   rest    💤 쉬는 중: 기록이 없고 아직 9시 전
+// 각 부서의 팀장(= 나)이 오늘 어떤 상태인지 네 가지 중 하나로 정한다.
+//   done    ✅ 완료   : 그 부서의 오늘 할 일을 함 (재무부: 기록 1건 이상, 인사부: 루틴 전부, 교육부: 단원 1개)
+//   working 💬 근무 중: 아직 안 했지만 지금이 9시~21시 (아직 할 수 있는 시간)
+//   problem ⚠ 문제   : 안 했는데 22시가 넘음
+//   rest    💤 쉬는 중: 안 했고 아직 9시 전
 // 상태마다 아이콘·라벨·요약 문구는 이 표 한 곳에만 적는다.
 // 색은 style.css의 [data-status="done"] 같은 네 줄이 맡는다 (JS는 상태 이름만 붙인다).
 const STATUS = {
@@ -206,12 +212,25 @@ function todayEntries() {
   });
 }
 
-// 위 규칙대로 상태 이름("done" 등)을 돌려준다
-function todayStatus() {
-  const count = todayEntries().length;
+// 사장실을 뺀, 열려 있는 부서 목록
+function openRooms() {
+  return ROOMS.filter(function (room) { return room.open && !room.ceo; });
+}
+
+// 부서별 "오늘 할 일을 했는가". 방 id로 구분한다. 사장실은 열린 부서 전부가 끝났을 때 완료.
+function roomDoneToday(roomId) {
+  if (roomId === "ledger") return todayEntries().length > 0;
+  if (roomId === "routine") return routineDoneToday(); // routine.js
+  if (roomId === "study") return studyDoneToday();     // study.js
+  if (roomId === "ceo") return openRooms().every(function (room) { return roomDoneToday(room.id); });
+  return false;
+}
+
+// 위 규칙대로 그 방의 상태 이름("done" 등)을 돌려준다
+function roomStatus(roomId) {
   const hour = new Date().getHours(); // 0 ~ 23
 
-  if (count > 0) return "done";
+  if (roomDoneToday(roomId)) return "done";
   if (hour >= 22) return "problem";
   if (hour >= 9) return "working";
   return "rest";
@@ -234,40 +253,56 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 // 상단 상태 바, 방의 팀장 알약, 이름표 칩, 재무부 창 제목의 알약에 오늘 상태를 한 번에 반영한다.
 // 상태가 붙는 요소에는 전부 data-status 속성을 넣는다. 색은 CSS가 그 값을 보고 정한다.
 function renderStatus() {
-  const status = todayStatus();
-  const info = STATUS[status];
   const todayList = todayEntries();
 
-  // (1) 상단 상태 바
-  statusSummary.textContent = info.icon + " " + info.summary;
-  statusSummary.dataset.status = status;
+  // (1) 상단 상태 바: 열린 부서 중 몇 개가 끝났는지 요약
+  const overall = roomStatus("ceo"); // 전부 끝났으면 done, 아니면 시간대에 따라 working/problem/rest
+  const remaining = openRooms().filter(function (room) { return !roomDoneToday(room.id); });
+  if (remaining.length === 0) {
+    statusSummary.textContent = STATUS.done.icon + " 오늘 할 일 전부 완료";
+  } else {
+    const names = remaining.map(function (room) { return room.name; }).join("·");
+    statusSummary.textContent = STATUS[overall].icon + " 남은 일 " + remaining.length + "개: " + names;
+  }
+  statusSummary.dataset.status = overall;
   todayDateText.textContent = todayString() + " (" + WEEKDAYS[new Date().getDay()] + ")";
-  if (todayList.length === 0) {
+
+  const todayCount = todayList.length + routineCountToday() + studyCountToday();
+  if (todayCount === 0) {
     todayCountText.textContent = "오늘 기록 없음";
     lastRecordText.textContent = "";
   } else {
-    todayCountText.textContent = "오늘 기록 " + todayList.length + "건";
-    lastRecordText.textContent = " · 마지막 기록 " + lastRecordTime(todayList);
+    todayCountText.textContent = "오늘 기록 " + todayCount + "건";
+    lastRecordText.textContent = todayList.length > 0 ? " · 가계부 마지막 " + lastRecordTime(todayList) : "";
   }
 
-  // (2) data-lead-status 가 붙은 알약 전부 (재무부 팀장, 사장님, 재무부 창 제목)
+  // (2) data-lead-status 가 붙은 알약 전부. data-room 을 보고 그 방의 상태를 넣는다
   for (const pill of document.querySelectorAll("[data-lead-status]")) {
-    pill.textContent = info.icon + " " + info.label;
+    const status = roomStatus(pill.dataset.room);
+    pill.textContent = STATUS[status].icon + " " + STATUS[status].label;
     pill.dataset.status = status;
   }
 
-  // (3) data-status-chip 이 붙은 이름표 칩 전부 (열린 방의 상태 개수)
+  // (3) data-status-chip 이 붙은 이름표 칩 전부
   for (const chip of document.querySelectorAll("[data-status-chip]")) {
-    chip.textContent = info.icon + " 1";
+    const status = roomStatus(chip.dataset.room);
+    chip.textContent = STATUS[status].icon + " 1";
     chip.dataset.status = status;
   }
 }
 
-// entries 배열의 내용을 보고 화면 전체를 다시 그린다.
+// 데이터가 바뀌면 화면 전체를 다시 그린다. 세 부서 화면 + 상단 바 + 지도의 상태.
+// 작은 앱이라 "뭐가 바뀌었든 전부 다시 그린다"가 가장 실수가 적다.
 function render() {
-  // 레벨, 오늘 상태, 잔액
   renderLevel();
-  renderStatus();
+  renderLedger();
+  renderRoutine(); // routine.js
+  renderStudy();   // study.js
+  renderStatus();  // 상태는 세 부서 결과를 보고 정하니 맨 마지막에
+}
+
+// 재무부: 잔액과 내역 목록
+function renderLedger() {
   balanceText.textContent = formatMoney(calculateBalance());
 
   // 목록을 비우고 처음부터 다시 만든다
@@ -328,12 +363,15 @@ function buildSeat(deskName, person, extraClass) {
 }
 
 // "팀장 | 💤 쉬는 중" 알약. 열린 방은 data-lead-status 를 붙여서 renderStatus()가 내용을 바꿔 준다
-function buildPill(role, open) {
+function buildPill(role, room) {
   const pill = makeElement("span", "pill");
   pill.appendChild(makeElement("b", "", role));
-  const status = makeElement("span", "pill-status", open ? "----" : "💤 채용 전");
+  const status = makeElement("span", "pill-status", room.open ? "----" : "💤 채용 전");
   status.dataset.status = "rest";
-  if (open) status.dataset.leadStatus = ""; // HTML로 치면 data-lead-status 속성
+  if (room.open) {
+    status.dataset.leadStatus = ""; // HTML로 치면 data-lead-status 속성
+    status.dataset.room = room.id;  // renderStatus()가 어느 방의 상태를 넣을지 알 수 있게
+  }
   pill.appendChild(status);
   return pill;
 }
@@ -346,7 +384,7 @@ function buildBossArea(room) {
     seat.appendChild(makeElement("span", "hire-note", "채용 예정"));
   }
   area.appendChild(seat);
-  area.appendChild(buildPill(room.ceo ? "사장님" : "팀장", room.open));
+  area.appendChild(buildPill(room.ceo ? "사장님" : "팀장", room));
   return area;
 }
 
@@ -396,6 +434,7 @@ function buildRoom(room) {
     const chip = makeElement("span", "chip", "----");
     chip.dataset.status = "rest";
     chip.dataset.statusChip = ""; // data-status-chip: renderStatus()가 내용을 바꾼다
+    chip.dataset.room = room.id;
     tag.appendChild(chip);
   } else {
     tag.appendChild(makeElement("span", "lock-badge", "🔒"));
@@ -466,16 +505,18 @@ function buildRoad() {
   road.appendChild(buildWalker("STAFF", "walker-2"));
 }
 
-// 재무부 창(가계부)에도 방처럼 벽 띠와 팀장 자리를 그려 넣는다
-function buildLedgerDeco() {
-  const shelf = document.getElementById("ledger-shelf");
-  for (const name of ["WINDOW", "WHITEBOARD", "CLOCK", "BOOKSHELF"]) {
-    shelf.appendChild(drawSprite(name, 3));
+// 부서 창(가계부·루틴·교육)에도 방처럼 벽 띠를 그려 넣는다. data-deco 가 붙은 곳마다.
+function buildWindowDeco() {
+  for (const shelf of document.querySelectorAll("[data-deco]")) {
+    for (const name of ["WINDOW", "WHITEBOARD", "CLOCK", "BOOKSHELF"]) {
+      shelf.appendChild(drawSprite(name, 3));
+    }
+    const door = makeElement("div", "room-door");
+    door.appendChild(drawSprite("DOOR", 3));
+    shelf.appendChild(door);
   }
-  const door = makeElement("div", "room-door");
-  door.appendChild(drawSprite("DOOR", 3));
-  shelf.appendChild(door);
 
+  // 재무부 창에는 팀장 자리도 둔다
   const deskArea = document.getElementById("ledger-desk");
   deskArea.appendChild(buildSeat("BOSS_DESK", "BOSS", "seat-boss"));
   deskArea.appendChild(makeElement("p", "desk-caption", "팀장 자리 (나). 기록 1건 = 10 EXP"));
@@ -492,18 +533,19 @@ function buildMap() {
     }
   }
   buildRoad();
-  buildLedgerDeco();
+  buildWindowDeco();
 }
 
 // ---------- 6. 화면 전환 ----------
-// 지도 화면과 부서 화면 중 하나만 보여준다.
+// 지도 화면과 부서 화면들(.screen) 중 하나만 보여준다.
 const mapScreen = document.getElementById("map-screen");
-const ledgerScreen = document.getElementById("ledger-screen");
 
 function showScreen(screen) {
-  mapScreen.classList.add("hidden");
-  ledgerScreen.classList.add("hidden");
+  for (const each of document.querySelectorAll(".screen")) {
+    each.classList.add("hidden");
+  }
   screen.classList.remove("hidden");
+  window.scrollTo(0, 0);
 }
 
 // 지도의 방을 누르면: 열린 방이면 들어가고, 잠긴 방이면 알려준다.
@@ -515,10 +557,11 @@ function connectRooms() {
         alert("아직 잠겨 있어요. 다음 단계에서 열립니다!");
         return;
       }
-      if (roomEl.dataset.room === "ledger") {
-        showScreen(ledgerScreen);
-      }
-      if (roomEl.dataset.room === "ceo") {
+      // 방 id 와 같은 이름의 화면이 있으면 연다. 예: "routine" → #routine-screen
+      const screen = document.getElementById(roomEl.dataset.room + "-screen");
+      if (screen) {
+        showScreen(screen);
+      } else {
         alert("사장실은 나중에 꾸밉니다");
       }
     });
@@ -572,7 +615,9 @@ try {
 }
 connectRooms();
 
-load();
+load();        // 재무부 내역
+routineLoad(); // 인사부 체크 (routine.js)
+studyLoad();   // 교육부 진도 (study.js)
 render();
 
 // 시간이 지나면 상태(근무 중 → 문제 등)가 바뀌니 1분마다 다시 계산한다

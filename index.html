@@ -58,12 +58,12 @@
       <button class="back-btn" data-back>◀ 지도</button>
       <span class="window-name">📒 재무부 · 가계부</span>
       <!-- 팀장(나)의 오늘 상태. data-lead-status 가 붙어 있어서 renderStatus()가 채운다 -->
-      <span class="pill" id="ledger-status"><b>팀장</b><span class="pill-status" data-lead-status data-status="rest">----</span></span>
+      <span class="pill"><b>팀장</b><span class="pill-status" data-lead-status data-room="ledger" data-status="rest">----</span></span>
     </header>
 
     <div class="window-body pattern-check">
       <!-- 방 느낌을 내는 장식(벽 띠·팀장 자리). app.js의 buildLedgerDeco()가 그림을 넣는다 -->
-      <div class="room-shelf ledger-shelf" id="ledger-shelf"></div>
+      <div class="room-shelf ledger-shelf" data-deco></div>
       <div class="ledger-desk" id="ledger-desk"></div>
 
       <div class="balance">
@@ -85,8 +85,66 @@
     </div>
   </section>
 
-  <!-- sprites.js(그림)를 먼저 읽고, 그 다음 app.js(동작)를 읽는다 -->
+  <!-- ===== 화면 3: 인사부 (데일리 루틴) ===== -->
+  <section id="routine-screen" class="screen hidden">
+    <header class="window-title">
+      <button class="back-btn" data-back>◀ 지도</button>
+      <span class="window-name">📋 인사부 · 데일리 루틴</span>
+      <span class="pill"><b>팀장</b><span class="pill-status" data-lead-status data-room="routine" data-status="rest">----</span></span>
+    </header>
+
+    <div class="window-body pattern-check" style="--floor: #ffdede">
+      <div class="room-shelf ledger-shelf" data-deco></div>
+
+      <!-- 연속 달성일 카드. 숫자는 routine.js의 renderRoutine()이 채운다 -->
+      <div class="card">
+        <p class="card-label">연속 달성일 🔥</p>
+        <p class="card-big"><span id="streak">0</span>일</p>
+        <p class="card-sub" id="routine-summary"></p>
+      </div>
+
+      <!-- 오늘의 체크 목록 -->
+      <ul id="routine-list" class="routine-list"></ul>
+
+      <h3 class="section-title">최근 14일</h3>
+      <div id="routine-history" class="history"></div>
+      <p class="help-text">체크 1개 = 10 EXP. 가계부 기록은 재무부에 내역을 적으면 자동으로 체크됩니다.</p>
+    </div>
+  </section>
+
+  <!-- ===== 화면 4: 교육부 (커리큘럼 진도) ===== -->
+  <section id="study-screen" class="screen hidden">
+    <header class="window-title">
+      <button class="back-btn" data-back>◀ 지도</button>
+      <span class="window-name">📚 교육부 · 코딩·AI 커리큘럼</span>
+      <span class="pill"><b>팀장</b><span class="pill-status" data-lead-status data-room="study" data-status="rest">----</span></span>
+    </header>
+
+    <div class="window-body pattern-dots" style="--floor: #e9e0ff">
+      <div class="room-shelf ledger-shelf" data-deco></div>
+
+      <!-- 진도 카드. study.js의 renderStudy()가 채운다 -->
+      <div class="card">
+        <p class="card-label">진도</p>
+        <p class="card-big"><span id="study-done">0</span> / <span id="study-total">66</span> 단원</p>
+        <span class="xp-bar xp-bar-wide"><span class="xp-fill" id="study-fill"></span></span>
+        <p class="card-sub" id="study-sub"></p>
+      </div>
+
+      <!-- 다음 단원 카드 -->
+      <div class="card next-card" id="next-unit"></div>
+
+      <!-- 과정별 단원 목록 -->
+      <div id="study-modules"></div>
+      <p class="help-text">단원 문서는 docs/curriculum/ 에 있습니다. 끝내면 체크하세요. 경험치 = 예상 시간 × 20.</p>
+    </div>
+  </section>
+
+  <!-- 읽는 순서가 중요하다: 그림 → 데이터 → 인사부 → 교육부 → app.js(맨 마지막, 시작 담당) -->
   <script src="sprites.js"></script>
+  <script src="curriculum.js"></script>
+  <script src="routine.js"></script>
+  <script src="study.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

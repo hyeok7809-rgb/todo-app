@@ -572,7 +572,9 @@ canvas.sprite {
 }
 
 /* ---------- 부서 창(가계부) ---------- */
-#ledger-screen {
+#ledger-screen,
+#routine-screen,
+#study-screen {
   max-width: 680px;
 }
 
@@ -749,6 +751,267 @@ canvas.sprite {
 }
 
 /* ---------- 중간 화면(태블릿): 한 층에 방 2개씩 ---------- */
+/* ---------- 부서 창 공통 카드 (인사부·교육부) ---------- */
+.card {
+  background: #fff;
+  border: 4px solid var(--ink);
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.card-label {
+  margin: 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.card-big {
+  margin: 4px 0 0;
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.card-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #556;
+}
+
+.card-title {
+  margin: 4px 0 10px;
+  font-size: 17px;
+  font-weight: bold;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 6px 12px;
+  border: 3px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.section-title {
+  margin: 18px 0 8px;
+  font-size: 15px;
+}
+
+.help-text {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: #556;
+}
+
+.xp-bar-wide {
+  display: block;
+  width: 100%;
+  height: 14px;
+  margin-top: 8px;
+}
+
+/* ---------- 인사부: 루틴 체크 목록 ---------- */
+.routine-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.routine-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.routine-item.done {
+  background: var(--c-done);
+}
+
+.routine-check,
+.unit-check {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  font-family: inherit;
+  font-size: 20px;
+  line-height: 1;
+  border: 3px solid var(--ink);
+  background: #fff;
+  cursor: pointer;
+}
+
+.routine-item.done .routine-check,
+.unit-row.done .unit-check {
+  background: #22c55e;
+  color: #fff;
+}
+
+.routine-check:disabled {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.routine-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.routine-hint {
+  font-size: 12px;
+  color: #556;
+}
+
+.routine-auto {
+  font-size: 11px;
+  border: 2px solid var(--ink);
+  padding: 1px 6px;
+  background: #ffd84a;
+}
+
+/* 최근 14일 표 */
+.history {
+  background: #fff;
+  border: 3px solid var(--ink);
+  padding: 8px;
+  overflow-x: auto;
+}
+
+.history-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.history-label {
+  width: 24px;
+  flex: none;
+  text-align: center;
+  font-size: 14px;
+}
+
+.history-day {
+  width: 20px;
+  flex: none;
+  text-align: center;
+  font-size: 10px;
+  color: #667;
+}
+
+.history-cell {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border: 2px solid var(--ink);
+  background: #eceef2;
+}
+
+.history-cell.done {
+  background: #22c55e;
+}
+
+/* ---------- 교육부: 과정과 단원 목록 ---------- */
+.module {
+  background: #fff;
+  border: 3px solid var(--ink);
+  margin-bottom: 8px;
+}
+
+.module.done {
+  background: var(--c-done);
+}
+
+.module-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.module-count {
+  font-size: 13px;
+  border: 2px solid var(--ink);
+  padding: 1px 6px;
+  background: #fff;
+  flex: none;
+}
+
+.module-goal {
+  margin: 0;
+  padding: 0 12px 8px;
+  font-size: 12px;
+  color: #556;
+}
+
+.unit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px 8px;
+}
+
+.unit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-top: 2px dashed #ccd;
+}
+
+.unit-row.done .unit-text b {
+  text-decoration: line-through;
+  color: #556;
+}
+
+.unit-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.unit-meta {
+  font-size: 12px;
+  color: #556;
+}
+
+.unit-link {
+  font-size: 13px;
+  color: var(--blue);
+  flex: none;
+}
+
+
 @media (max-width: 1000px) {
   .floor {
     grid-template-columns: repeat(2, 1fr);
