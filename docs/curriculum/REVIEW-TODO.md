@@ -5,30 +5,7 @@
 
 ## 1. 검토는 됐지만 아직 못 고친 것
 
-### docs/curriculum/02-web-basics/02-4.md (medium/code-mismatch)
-- 문제 구절: `// 1. 싹 비운다`
-- 무엇이 틀렸나: 172~184행을 app.js의 `render()`라고 인용했지만 현재 app.js 307~317행의 `render()`는 `renderLevel(); renderLedger(); renderMonth(); renderRoutine(); … renderStatus();`를 부르기만 한다. 잔액·목록 비우기·`<li>` 만들기는 365~405행 `renderLedger()`에 있고, 요소 생성도 `document.createElement`가 아니라 69행의 `makeElement()`를 쓴다(114~125행 '`render()`의 한 줄 만들기'도 같은 문제).
-- 고칠 방향: 코드 블록을 `function renderLedger() { balanceText.textContent = formatMoney(calculateBalance()); list.innerHTML = ""; … for (const entry of recentFirst) { const item = makeElement("li"); … list.appendChild(item); } }`로 바꾸고, 그 위에 '`render()`는 `renderLedger()`를 포함한 부서별 그리기 함수를 차례로 부르는 함수이고, `makeElement()`는 `createElement`+`className`+`textContent` 세 줄을 묶은 app.js 2-1 구역의 도우미'라는 설명을 붙인다.
-
-### docs/curriculum/02-web-basics/02-3.md (medium/code-mismatch)
-- 문제 구절: `grid-template-columns: 1fr 1fr;   /* 같은 너비의 열 2개 */`
-- 무엇이 틀렸나: style.css 225~241행에서 `.building`은 배경·테두리·패딩만 있는 상자이고, 격자는 `.floor { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }`에 `.room-ceo { grid-column: span 2; }`다(1000px 이하 2열, 640px 이하 1열). 168행 '방이 6개이니 2열이면 3행이 자동으로 생긴다'도 방 7개·층당 4열인 실제와 다르다.
-- 고칠 방향: 코드 블록을 `.floor { display: grid; grid-template-columns: repeat(4, 1fr);  /* 같은 너비의 열 4개 */ gap: 10px; } .room-ceo { grid-column: span 2; }`로 바꾸고, 168행을 '한 층에 방이 4개씩이고 사장실은 `span 2`로 두 칸을 차지한다. `@media (max-width: 1000px)`에서 `repeat(2, 1fr)`, 640px 이하에서 `1fr`로 줄어든다'로 고친다.
-
-### docs/curriculum/02-web-basics/02-3.md (medium/code-mismatch)
-- 문제 구절: `**실제 예시 2 — animation.** 복도를 걷는 사장님.`
-- 무엇이 틀렸나: 219~228행의 `@keyframes walk { from { left: 20px } to { left: calc(100% - 52px) } }`와 `.player { animation: walk 6s linear infinite alternate; }`는 style.css에 없다. 실제는 493~552행 `.walker { animation: stroll 18s linear infinite; }`, `@keyframes stroll`(50%에서 `scaleX(-1)`로 몸을 뒤집어 돌아옴), `.walker-body { animation: bob 0.5s steps(1, end) infinite; }`다. 퀴즈 5 해설(379행)의 '`.player`의 `animation: walk 6s linear infinite alternate`'도 같은 오류다.
-- 고칠 방향: 코드 블록을 `@keyframes stroll { 0% { left: 2%; transform: scaleX(1); } 49.99% { left: calc(100% - 36px); transform: scaleX(1); } 50% { left: calc(100% - 36px); transform: scaleX(-1); } … }`와 `.walker { position: absolute; animation: stroll 18s linear infinite; }`로 바꾸고, `alternate` 대신 `scaleX(-1)`로 되돌아오는 이유를 설명한다. 퀴즈 5 해설도 '`.walker`의 `animation: stroll 18s linear infinite`(계속 왕복)'로 고친다.
-
-### docs/curriculum/02-web-basics/02-3.md (medium/code-mismatch)
-- 문제 구절: `**실제 예시.** `style.css`에서 하나씩.`
-- 무엇이 틀렸나: 'style.css에서 하나씩' 가져왔다는 37~63행 블록 중 네 규칙이 실제 파일에 없다: `.sign h1 { color: var(--accent); }`(`.sign`·`h1` 없음), `.room.locked { opacity: 0.6; }`(실제는 자식에 `opacity: 0.75`), `.room:hover { transform: translate(-2px, -2px); }`(실제 254~258행은 `outline: 3px solid var(--yellow)`), `.room.locked::after { content: "🔒"; }`(style.css에 `::after` 규칙 없음). 68행 '잠긴 방의 🔒는 HTML에 없고 `::after`가 그린 것'도 틀렸다. 🔒는 app.js 502행 `makeElement("span", "lock-badge", "🔒")`와 513행 `door-lock` span이 만든다.
-- 고칠 방향: 코드 블록에서 네 규칙을 실제 규칙으로 바꾼다: 자손 선택자 예 → `.pill b { color: var(--yellow); }`, 두 클래스 예 → `.room.locked { cursor: not-allowed; }`, 의사 클래스 예 → `.room:hover { outline: 3px solid var(--yellow); }`, 의사 요소 예 → `.status-item + .status-item::before { content: ""; }`(상태 바 항목 사이 구분선). 68행은 '상태 바 항목 사이의 세로 선은 HTML에 없고 `::before`가 그린 것이다. 잠긴 방의 🔒는 `app.js`의 `buildRoom()`이 span으로 만들어 넣는다'로 고친다.
-
-### docs/curriculum/04-data-api/04-1.md (low/format)
-- 문제 구절: `4. **4-3 예습** — 한국투자증권 공식 샘플 저장소의 `examples_llm/domestic_stock/inquire_price/inquire_price.py`를 열어, 핵심 개념 6의 체크리스트 여섯 칸을 직접 채운다. 응답 본문의 필드 이름(현재가 등)은 어디서 확인해야 하`
-- 무엇이 틀렸나: 공통 형식은 숙제 3개인데 이 단원만 4개다(4-2·4-3·4-4는 모두 3개). 다른 단원(4-2 등)은 '다음 단원 예습'을 3번 숙제로 넣어 3개를 지킨다.
-- 고칠 방향: 이 항목을 삭제하고, 3번 숙제 끝에 "(4-3 예습: 공식 샘플 `examples_llm/domestic_stock/inquire_price/inquire_price.py`로 체크리스트 여섯 칸을 채워 본다)"를 한 문장으로 덧붙여 숙제를 3개로 맞춘다.
+(2026-10-23 모두 반영: 02-3 선택자 예시 4규칙·`::before` 설명, 02-3 `.floor` 4열 격자, 02-3 `stroll`·`scaleX(-1)`·퀴즈 5 해설·따라하기 3(b) 18초, 02-4 `renderLedger()`·`makeElement()` 설명 2곳, 04-1 숙제 3개로. 남은 것 없음.)
 
 ## 2. 검토를 아직 안 한 과정: 8~13과정 (08-claude-code-basics ~ 13-monetize)
 
@@ -43,3 +20,12 @@
 7. **Claude·AI 사실**: 공식 문서에서 직접 확인한 것만 '확인일'을 남긴다. 못 연 주소는 '주소만 기재(작성 환경에서 접속 불가, 직접 확인)'.
 
 검토 방법: 과정 하나를 통째로 Claude에게 주고 "이 체크리스트 7가지로 검토해서 파일·구절·고칠 문장을 표로 줘"라고 요청한 뒤, 한 건씩 원문을 열어 확인하고 고친다. `python3 docs/curriculum/check-format.py`로 형식을 다시 확인한다.
+
+### 진행 (2026-10-23 · 로컬 Claude Code 단일 세션)
+
+- 체크리스트 1~6을 8~13과정 29단원 전체에 grep으로 먼저 돌림: 옛 app.js 설명 0 · toISOString 1(12-4 에러 보고 시각 — 서버 로그용 UTC 라 그대로 두고 설명 주석 추가) · 로드맵 단계 1(11-4 "localStorage(2단계)" → 1단계부터) · 없는 단원 참조 0("5-5"는 모델 ID) · 숙제 4개 0 · entry category 누락 0.
+- **8과정 끝**(공식 문서 overview·quickstart·costs·commands·memory·best-practices·permission-modes·checkpointing 대조, 확인일 2026-10-23): 8-1 확인일만 · 8-2 체크포인트 추적 범위(Claude가 편집한 적 없는 파일의 Bash 변경·외부·서브에이전트 변경 미추적)·Esc 두 번은 입력창 비었을 때 · 8-3 `/doctor prompt-audit` 한 줄 · 8-4 acceptEdits 는 작업 폴더 안 rm·rmdir·cp·sed 도 묻지 않음, 현재 모드는 상태 표시줄(`/status` 아님) · 8-5 "4단계 기획부" → 로드맵 6단계 자산관리부 확장 · 8-6 "(로드맵 4단계에서)" → 기획부 확장. 형식 검사 66/66.
+- **9과정 끝**(sub-agents·skills·hooks-guide·mcp·claude-code-on-the-web·routines·settings 대조, 확인일 2026-10-23): 9-1 내장 도우미 에이전트 한 줄 · 9-2 claude.ai 스킬 동기화 폴더(synced · 내려받기만) · 9-3 훅 type 네 가지 한 줄 · 9-4 SSE 폐기 표현 · 9-5 **클라우드 세션에서 `/clear` 됨**(문서 바뀜) · Windows 는 번들 업로드 때 미커밋 비밀 파일 변경이 그대로 올라감 · 예약 작업은 auto 모드로 시작(승인 질문이 뜰 수 있음) · Run now/API 한도 · 9-6 확인일만.
+- **10과정 끝**(platform.claude.com pricing·structured-outputs·prompt-caching·agent-sdk quickstart 대조 + Anthropic 공식 API 참고 자료(2026-10-06 판), 확인일 2026-10-23): 10-1 가격·모델 ID 확인(Haiku 5.5 는 10만 토큰까지 $0.10/M) · 10-2 구조화 출력 파라미터 `output_config.format`·`messages.parse()`(옛 `output_format` 폐기) · **10-3 `tool_choice` any/tool 강제는 지금 모델(Opus 5.5·Sonnet 5.5·Fable 5.1)에서 400** → auto+프롬프트·strict 로 · 10-4 퀵스타트 코드·도구 표·API 키 안내 그대로 맞음 · 10-5 캐시 최소 512 토큰·배율(읽기 0.05×)·배치 50% 맞음, log_usage 주석 한 줄.
+- **11~13과정 끝**: 사실 검증 대상이 거의 없음(설계·운영·수익화) — 11-4 단계 번호 1건, 12-4 toISOString 주석, 확인일 갱신. 형식 검사 66/66.
+- **남은 것 없음**(8~13과정 검토 완료 2026-10-23). 다음은 HANDOVER.md §5 의 3번부터(GitHub Pages 켜기 · 로드맵 6단계 · AI 직원실).
